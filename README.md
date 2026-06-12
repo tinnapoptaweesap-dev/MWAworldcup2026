@@ -1,0 +1,1 @@
+# MWAworldcup2026
