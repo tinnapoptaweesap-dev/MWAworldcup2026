@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ตารางทายผล FIFA World Cup 2026 (ออนไลน์)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700;800&family=Bebas+Neue&display=swap');
+
+  :root {
+    --gold: #C9A84C;
+    --gold-light: #E8C96A;
+    --dark: #0D1117;
+    --dark2: #161B22;
+    --dark3: #1F2937;
+    --green: #1E6B3A;
+    --green-light: #27AE60;
+    --red: #C0392B;
+    --text: #E8E8E8;
+    --text-dim: #8B9099;
+    --border: #2D3748;
+    --highlight: #1A2744;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: var(--dark);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    background: linear-gradient(135deg, #0D1117 0%, #1A2744 50%, #0D2B1A 100%);
+    border-bottom: 2px solid var(--gold);
+    padding: 32px 24px 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '⚽';
+    font-size: 200px;
+    opacity: 0.04;
+    position: absolute;
+    top: -40px; right: -20px;
+    line-height: 1;
+  }
+  .hero-eyebrow {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .hero-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(36px, 8vw, 64px);
+    letter-spacing: 2px;
+    line-height: 1;
+    color: #fff;
+  }
+  .hero-title span { color: var(--gold); }
+  .hero-sub {
+    margin-top: 10px;
+    font-size: 14px;
+    color: var(--text-dim);
+  }
+  .hero-flags {
+    margin-top: 14px;
+    font-size: 28px;
+    letter-spacing: 6px;
+  }
+
+  /* ── SCORE RULES ── */
+  .rules-section {
+    max-width: 900px;
+    margin: 28px auto 0;
+    padding: 0 16px;
+  }
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 2px;
+    color: var(--gold);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .rules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .rule-card {
+    background: var(--dark2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .rule-pts {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    line-height: 1;
+    min-width: 40px;
+    text-align: center;
+  }
+  .rule-pts.pts-5 { color: #FFD700; }
+  .rule-pts.pts-3 { color: #C9A84C; }
+  .rule-pts.pts-1 { color: var(--green-light); }
+  .rule-pts.pts-0 { color: var(--text-dim); }
+  .rule-label { font-size: 13px; line-height: 1.5; }
+  .rule-label strong { display: block; font-size: 14px; margin-bottom: 2px; }
+  .rule-note {
+    font-size: 12px;
+    color: var(--text-dim);
+    background: var(--dark2);
+    border-left: 3px solid var(--gold);
+    padding: 8px 12px;
+    border-radius: 0 6px 6px 0;
+    margin-top: 8px;
+  }
+
+  /* ── PARTICIPANT SETUP ── */
+  .setup-section {
+    max-width: 900px;
+    margin: 24px auto 0;
+    padding: 0 16px;
+  }
+  .player-setup {
+    background: var(--dark2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+  .player-setup label { font-size: 13px; color: var(--text-dim); display: block; margin-bottom: 6px; }
+  .player-setup input[type=text] {
+    background: var(--dark3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 8px 12px;
+    font-family: 'Sarabun', sans-serif;
+    font-size: 14px;
+    width: 180px;
+  }
+  .player-setup input[type=text]:focus { outline: none; border-color: var(--gold); }
+  .btn {
+    padding: 8px 18px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-family: 'Sarabun', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    transition: opacity .15s;
+  }
+  .btn:hover { opacity: .85; }
+  .btn-gold { background: var(--gold); color: #0D1117; }
+  .btn-dim { background: var(--dark3); color: var(--text-dim); border: 1px solid var(--border); }
+  .player-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .player-tag {
+    background: var(--highlight);
+    border: 1px solid var(--gold);
+    border-radius: 20px;
+    padding: 4px 12px 4px 14px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .player-tag button {
+    background: none; border: none; color: var(--text-dim);
+    cursor: pointer; font-size: 14px; line-height: 1; padding: 0;
+  }
+
+  /* ── STAGE TABS ── */
+  .tabs-wrap {
+    max-width: 900px;
+    margin: 28px auto 0;
+    padding: 0 16px;
+  }
+  .tabs {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    padding: 8px 16px;
+    border-radius: 6px 6px 0 0;
+    border: 1px solid transparent;
+    border-bottom: none;
+    background: var(--dark2);
+    color: var(--text-dim);
+    cursor: pointer;
+    font-family: 'Sarabun', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: all .15s;
+  }
+  .tab:hover { color: var(--text); background: var(--dark3); }
+  .tab.active {
+    background: var(--dark3);
+    color: var(--gold);
+    border-color: var(--border);
+    border-bottom-color: var(--dark3);
+  }
+
+  /* ── MATCHES CONTAINER ── */
+  .matches-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 16px 40px;
+    background: var(--dark);
+  }
+  .stage-panel { display: none; }
+  .stage-panel.active { display: block; }
+
+  .day-block { margin-top: 0; }
+  .day-header {
+    background: var(--dark3);
+    border-left: 3px solid var(--gold);
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--gold-light);
+    letter-spacing: .5px;
+    margin-top: 0;
+    border-radius: 0 4px 4px 0;
+  }
+
+  /* ── MATCH CARD ── */
+  .match-card {
+    background: var(--dark2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-top: 8px;
+    transition: border-color .15s;
+  }
+  .match-card:hover { border-color: #3D4A5C; }
+  .match-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+  .match-meta .group-badge {
+    background: var(--highlight);
+    border: 1px solid var(--gold);
+    border-radius: 3px;
+    padding: 1px 6px;
+    color: var(--gold);
+    font-weight: 700;
+  }
+  .match-teams {
+    display: grid;
+    grid-template-columns: 1fr 60px 1fr;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .team-name {
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .team-name.home { text-align: right; }
+  .team-name.away { text-align: left; }
+  .vs-box {
+    text-align: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    color: var(--text-dim);
+  }
+
+  /* ── PREDICTION ROWS ── */
+  .predictions-rows { display: flex; flex-direction: column; gap: 6px; }
+  .prediction-row {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    align-items: center;
+    gap: 8px;
+  }
+  .pred-name {
+    font-size: 12px;
+    color: var(--text-dim);
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .pred-inputs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .score-input {
+    width: 40px;
+    text-align: center;
+    background: var(--dark3);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text);
+    padding: 5px 4px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    transition: border-color .15s;
+  }
+  .score-input:focus { outline: none; border-color: var(--gold); background: var(--highlight); }
+  .score-sep {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    color: var(--text-dim);
+  }
+  .pred-result-badge {
+    margin-left: 4px;
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-weight: 700;
+    display: none;
+  }
+  .badge-5 { background: #4A3800; color: #FFD700; display: inline-block; }
+  .badge-3 { background: #3A2800; color: #C9A84C; display: inline-block; }
+  .badge-1 { background: #0D2B1A; color: var(--green-light); display: inline-block; }
+  .badge-0 { background: #2B0D0D; color: #E55; display: inline-block; }
+
+  /* ── ACTUAL SCORE (admin) ── */
+  .actual-score-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+  }
+  .actual-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    min-width: 130px;
+    text-align: right;
+  }
+  .actual-inputs { display: flex; align-items: center; gap: 6px; }
+  .actual-input {
+    width: 44px;
+    text-align: center;
+    background: #0D2B1A;
+    border: 1px solid var(--green);
+    border-radius: 5px;
+    color: #7CFC8C;
+    padding: 5px 4px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+  }
+  .actual-input:focus { outline: none; border-color: var(--green-light); }
+  .calc-btn {
+    padding: 4px 12px;
+    border-radius: 5px;
+    border: 1px solid var(--green);
+    background: transparent;
+    color: var(--green-light);
+    cursor: pointer;
+    font-family: 'Sarabun', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .calc-btn:hover { background: #0D2B1A; }
+
+  /* ── SCOREBOARD ── */
+  .scoreboard-section {
+    max-width: 900px;
+    margin: 28px auto 0;
+    padding: 0 16px;
+  }
+  .scoreboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  .scoreboard-table thead tr {
+    background: var(--dark3);
+  }
+  .scoreboard-table th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+  .scoreboard-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .scoreboard-table tbody tr:hover { background: var(--dark2); }
+  .rank-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    color: var(--text-dim);
+  }
+  .rank-num.r1 { color: #FFD700; }
+  .rank-num.r2 { color: #C0C0C0; }
+  .rank-num.r3 { color: #CD7F32; }
+  .total-pts {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    color: var(--gold);
+  }
+
+  /* ── PRINT STYLES ── */
+  @media print {
+    .setup-section, .scoreboard-section, .btn, .calc-btn { display: none !important; }
+    body { background: #fff; color: #000; }
+    .hero { background: #fff; border-bottom: 2px solid #333; }
+    .hero-title, .hero-eyebrow { color: #000; }
+    .match-card { border: 1px solid #ccc; background: #fff; }
+    .score-input { border: 1px solid #999; background: #f9f9f9; color: #000; }
+    .day-header { background: #eee; color: #333; }
+  }
+
+  @media (max-width: 600px) {
+    .match-teams { grid-template-columns: 1fr 40px 1fr; }
+    .team-name { font-size: 13px; }
+    .prediction-row { grid-template-columns: 90px 1fr; }
+    .pred-name { font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">ตารางทายผล (ออนไลน์)</div>
+  <div class="hero-title">FIFA WORLD CUP <span>2026</span></div>
+  <div class="hero-sub">11 มิถุนายน – 19 กรกฎาคม 2026 · USA · Canada · Mexico</div>
+  <div class="hero-flags">🇺🇸 🇨🇦 🇲🇽</div>
+</div>
+
+<!-- LOGIN GATE -->
+<div class="rules-section" id="loginGate">
+  <div class="section-title">เริ่มต้น</div>
+  <div class="player-setup" style="align-items:flex-end;">
+    <div>
+      <label>ชื่อของคุณ</label>
+      <input type="text" id="loginNameInput" placeholder="พิมพ์ชื่อคุณ..." maxlength="20" />
+    </div>
+    <button class="btn btn-gold" onclick="loginPlayer()">เข้าสู่ระบบ / กรอกคำทาย</button>
+  </div>
+  <div class="rule-note">
+    📌 พิมพ์ชื่อของคุณแล้วกด "เข้าสู่ระบบ" คำทายของคุณจะถูกบันทึกออนไลน์ และทุกคนจะเห็นตารางคะแนนรวมร่วมกัน
+    ⚠️ ข้อมูลคำทาย/ชื่อทั้งหมดเป็นข้อมูลสาธารณะที่ทุกคนที่เปิดหน้านี้มองเห็นได้
+  </div>
+  <div class="player-tags" id="existingPlayers" style="margin-top:14px;"></div>
+</div>
+
+<!-- RULES -->
+<div class="rules-section">
+  <div class="section-title">กติกาการทายผล</div>
+  <div class="rules-grid">
+    <div class="rule-card">
+      <div class="rule-pts pts-3">3</div>
+      <div class="rule-label">
+        <strong>ทายผู้ชนะ + สกอร์ถูกต้อง</strong>
+        ทายได้ทั้งผลแพ้ชนะ/เสมอ และสกอร์ถูกต้องทุกตัว
+      </div>
+    </div>
+    <div class="rule-card">
+      <div class="rule-pts pts-1">1</div>
+      <div class="rule-label">
+        <strong>ทายผู้ชนะถูก</strong>
+        ทายผลแพ้ชนะ/เสมอถูก แต่สกอร์ผิด
+      </div>
+    </div>
+    <div class="rule-card">
+      <div class="rule-pts pts-0">0</div>
+      <div class="rule-label">
+        <strong>ทายผิด</strong>
+        ทายผลแพ้ชนะ/เสมอผิด
+      </div>
+    </div>
+  </div>
+  <div class="rule-note">
+    📌 รอบน็อคเอาท์: คิดคะแนนจากผลภายใน 90 นาที (ไม่รวมต่อเวลา/จุดโทษ) · กรณีเสมอหลังต่อเวลาหรือจุดโทษ ให้ทายเสมอ = ถือว่าทายผลถูก
+  </div>
+</div>
+
+<!-- ACTIVE USER BAR -->
+<div class="setup-section" id="activeUserBar" style="display:none;">
+  <div class="player-setup" style="justify-content:space-between;">
+    <div style="font-size:14px;">
+      กำลังกรอกคำทายในชื่อ: <span id="activeUserName" style="color:var(--gold);font-weight:700;"></span>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-dim" onclick="switchUser()">เปลี่ยนผู้ใช้</button>
+      <button class="btn btn-dim" id="adminToggleBtn" onclick="toggleAdmin()" style="display:none;">โหมดกรอกผลจริง</button>
+    </div>
+  </div>
+</div>
+
+<!-- STAGE TABS -->
+<div class="tabs-wrap" id="stageTabsWrap" style="display:none;">
+  <div class="tabs" id="stageTabs">
+    <div class="tab active" onclick="switchTab('group','รอบแบ่งกลุ่ม',this)">รอบแบ่งกลุ่ม</div>
+    <div class="tab" onclick="switchTab('r32','รอบ 32 ทีม',this)">รอบ 32 ทีม</div>
+    <div class="tab" onclick="switchTab('r16','รอบ 16 ทีม',this)">รอบ 16 ทีม</div>
+    <div class="tab" onclick="switchTab('qf','รอบก่อนรองฯ',this)">รอบก่อนรองฯ</div>
+    <div class="tab" onclick="switchTab('sf','รอบรองชนะเลิศ',this)">รอบรองฯ</div>
+    <div class="tab" onclick="switchTab('final','รอบชิงชนะเลิศ',this)">รอบชิง</div>
+    <div class="tab" onclick="switchTab('scoreboard','คะแนนรวม',this)">🏆 คะแนนรวม</div>
+  </div>
+</div>
+
+<!-- MATCHES PANELS -->
+<div class="matches-container" id="matchesContainer" style="display:none;"></div>
+
+<!-- SCOREBOARD -->
+<div class="scoreboard-section" id="scoreboard-panel" style="display:none; padding-bottom:40px;">
+  <div class="section-title">🏆 ตารางคะแนนรวม</div>
+  <table class="scoreboard-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>ผู้ทาย</th>
+        <th>คะแนนรวม</th>
+        <th>3 แต้ม</th>
+        <th>1 แต้ม</th>
+      </tr>
+    </thead>
+    <tbody id="scoreboardBody"></tbody>
+  </table>
+</div>
+
+<div id="loadingMsg" style="text-align:center; padding:30px; color:var(--text-dim); font-size:13px;">กำลังโหลดข้อมูล...</div>
+<script>
+const MATCHES = {
+  group: [
+    // June 11
+    { id:'g1',  date:'พฤ 11 มิ.ย.', time:'01:00*', home:'เม็กซิโก',      away:'แอฟริกาใต้',  group:'A', venue:'Mexico City' },
+    { id:'g2',  date:'พฤ 11 มิ.ย.', time:'08:00*', home:'เกาหลีใต้',     away:'เช็กเกีย',    group:'A', venue:'Guadalajara' },
+    // June 12
+    { id:'g3',  date:'ศ 12 มิ.ย.',  time:'02:00*', home:'แคนาดา',        away:'บอสเนียฯ',    group:'B', venue:'Toronto' },
+    { id:'g4',  date:'ศ 12 มิ.ย.',  time:'08:00*', home:'สหรัฐอเมริกา', away:'ปารากวัย',    group:'D', venue:'Los Angeles' },
+    // June 13
+    { id:'g5',  date:'ส 13 มิ.ย.',  time:'02:00*', home:'กาตาร์',        away:'สวิตเซอร์แลนด์',group:'B', venue:'San Francisco' },
+    { id:'g6',  date:'ส 13 มิ.ย.',  time:'05:00*', home:'บราซิล',        away:'โมร็อกโก',    group:'C', venue:'New York/NJ' },
+    { id:'g7',  date:'ส 13 มิ.ย.',  time:'08:00*', home:'เฮติ',          away:'สกอตแลนด์',  group:'C', venue:'Boston' },
+    { id:'g8',  date:'ส 13 มิ.ย.',  time:'11:00*', home:'ออสเตรเลีย',    away:'ตุรกี',       group:'D', venue:'Vancouver' },
+    // June 14
+    { id:'g9',  date:'อา 14 มิ.ย.', time:'00:00*', home:'เยอรมนี',       away:'กือราเซา',    group:'E', venue:'Houston' },
+    { id:'g10', date:'อา 14 มิ.ย.', time:'03:00*', home:'เนเธอร์แลนด์', away:'ญี่ปุ่น',     group:'F', venue:'Dallas' },
+    { id:'g11', date:'อา 14 มิ.ย.', time:'06:00*', home:'ไอวอรีโคสต์',  away:'เอกวาดอร์',  group:'E', venue:'Philadelphia' },
+    { id:'g12', date:'อา 14 มิ.ย.', time:'09:00*', home:'สวีเดน',        away:'ตูนิเซีย',    group:'F', venue:'Monterrey' },
+    // June 15
+    { id:'g13', date:'จ 15 มิ.ย.',  time:'23:00',  home:'สเปน',          away:'กาบูเวร์ดี',  group:'H', venue:'Atlanta' },
+    { id:'g14', date:'จ 15 มิ.ย.',  time:'02:00*', home:'เบลเยียม',      away:'อียิปต์',     group:'G', venue:'Vancouver' },
+    { id:'g15', date:'จ 15 มิ.ย.',  time:'05:00*', home:'ซาอุดีอาระเบีย',away:'อุรุกวัย',   group:'H', venue:'Miami' },
+    { id:'g16', date:'จ 15 มิ.ย.',  time:'08:00*', home:'อิหร่าน',       away:'นิวซีแลนด์', group:'G', venue:'Los Angeles' },
+    // June 16
+    { id:'g17', date:'อ 16 มิ.ย.',  time:'02:00*', home:'ฝรั่งเศส',      away:'เซเนกัล',    group:'I', venue:'New York/NJ' },
+    { id:'g18', date:'อ 16 มิ.ย.',  time:'05:00*', home:'อิรัก',         away:'นอร์เวย์',    group:'I', venue:'Boston' },
+    { id:'g19', date:'อ 16 มิ.ย.',  time:'08:00*', home:'อาร์เจนตินา',  away:'แอลจีเรีย',  group:'J', venue:'Kansas City' },
+    { id:'g20', date:'อ 16 มิ.ย.',  time:'11:00*', home:'ออสเตรีย',      away:'จอร์แดน',    group:'J', venue:'San Francisco' },
+    // June 17
+    { id:'g21', date:'พ 17 มิ.ย.',  time:'00:00*', home:'โปรตุเกส',      away:'คองโก DR',   group:'K', venue:'Houston' },
+    { id:'g22', date:'พ 17 มิ.ย.',  time:'03:00*', home:'อังกฤษ',        away:'โครเอเชีย',  group:'L', venue:'Dallas' },
+    { id:'g23', date:'พ 17 มิ.ย.',  time:'06:00*', home:'กานา',          away:'ปานามา',     group:'L', venue:'Toronto' },
+    { id:'g24', date:'พ 17 มิ.ย.',  time:'09:00*', home:'อุซเบกิสถาน',  away:'โคลอมเบีย', group:'K', venue:'Mexico City' },
+    // June 18
+    { id:'g25', date:'พฤ 18 มิ.ย.', time:'23:00',  home:'เช็กเกีย',      away:'แอฟริกาใต้', group:'A', venue:'Atlanta' },
+    { id:'g26', date:'พฤ 18 มิ.ย.', time:'02:00*', home:'สวิตเซอร์แลนด์',away:'บอสเนียฯ',  group:'B', venue:'Los Angeles' },
+    { id:'g27', date:'พฤ 18 มิ.ย.', time:'05:00*', home:'แคนาดา',        away:'กาตาร์',     group:'B', venue:'Vancouver' },
+    { id:'g28', date:'พฤ 18 มิ.ย.', time:'08:00*', home:'เม็กซิโก',      away:'เกาหลีใต้',  group:'A', venue:'Guadalajara' },
+    // June 19
+    { id:'g29', date:'ศ 19 มิ.ย.',  time:'02:00*', home:'สกอตแลนด์',    away:'โมร็อกโก',   group:'C', venue:'Boston' },
+    { id:'g30', date:'ศ 19 มิ.ย.',  time:'02:00*', home:'สหรัฐอเมริกา', away:'ออสเตรเลีย', group:'D', venue:'Seattle' },
+    { id:'g31', date:'ศ 19 มิ.ย.',  time:'07:30*', home:'บราซิล',        away:'เฮติ',        group:'C', venue:'Philadelphia' },
+    { id:'g32', date:'ศ 19 มิ.ย.',  time:'10:00*', home:'ตุรกี',         away:'ปารากวัย',   group:'D', venue:'San Francisco' },
+    // June 20
+    { id:'g33', date:'ส 20 มิ.ย.',  time:'00:00*', home:'เนเธอร์แลนด์', away:'สวีเดน',     group:'F', venue:'Houston' },
+    { id:'g34', date:'ส 20 มิ.ย.',  time:'03:00*', home:'เยอรมนี',       away:'ไอวอรีโคสต์',group:'E', venue:'Toronto' },
+    { id:'g35', date:'ส 20 มิ.ย.',  time:'10:00*', home:'เอกวาดอร์',    away:'กือราเซา',   group:'E', venue:'Kansas City' },
+    { id:'g36', date:'ส 20 มิ.ย.',  time:'11:00*', home:'ตูนิเซีย',      away:'ญี่ปุ่น',     group:'F', venue:'Monterrey' },
+    // June 21
+    { id:'g37', date:'อา 21 มิ.ย.', time:'23:00',  home:'สเปน',          away:'ซาอุดีอาระเบีย',group:'H', venue:'Atlanta' },
+    { id:'g38', date:'อา 21 มิ.ย.', time:'02:00*', home:'เบลเยียม',      away:'อิหร่าน',    group:'G', venue:'Los Angeles' },
+    { id:'g39', date:'อา 21 มิ.ย.', time:'05:00*', home:'อุรุกวัย',      away:'กาบูเวร์ดี', group:'H', venue:'Miami' },
+    { id:'g40', date:'อา 21 มิ.ย.', time:'08:00*', home:'นิวซีแลนด์',   away:'อียิปต์',    group:'G', venue:'Vancouver' },
+    // June 22
+    { id:'g41', date:'จ 22 มิ.ย.',  time:'00:00*', home:'อาร์เจนตินา',  away:'ออสเตรีย',   group:'J', venue:'Dallas' },
+    { id:'g42', date:'จ 22 มิ.ย.',  time:'04:00*', home:'ฝรั่งเศส',      away:'อิรัก',      group:'I', venue:'Philadelphia' },
+    { id:'g43', date:'จ 22 มิ.ย.',  time:'07:00*', home:'นอร์เวย์',      away:'เซเนกัล',    group:'I', venue:'New York/NJ' },
+    { id:'g44', date:'จ 22 มิ.ย.',  time:'10:00*', home:'จอร์แดน',       away:'แอลจีเรีย',  group:'J', venue:'San Francisco' },
+    // June 23
+    { id:'g45', date:'อ 23 มิ.ย.',  time:'00:00*', home:'โปรตุเกส',      away:'อุซเบกิสถาน',group:'K', venue:'Houston' },
+    { id:'g46', date:'อ 23 มิ.ย.',  time:'03:00*', home:'อังกฤษ',        away:'กานา',       group:'L', venue:'Boston' },
+    { id:'g47', date:'อ 23 มิ.ย.',  time:'06:00*', home:'ปานามา',        away:'โครเอเชีย',  group:'L', venue:'Toronto' },
+    { id:'g48', date:'อ 23 มิ.ย.',  time:'09:00*', home:'โคลอมเบีย',    away:'คองโก DR',   group:'K', venue:'Guadalajara' },
+    // June 24
+    { id:'g49', date:'พ 24 มิ.ย.',  time:'02:00*', home:'สวิตเซอร์แลนด์',away:'แคนาดา',    group:'B', venue:'Vancouver' },
+    { id:'g50', date:'พ 24 มิ.ย.',  time:'02:00*', home:'บอสเนียฯ',      away:'กาตาร์',     group:'B', venue:'Seattle' },
+    { id:'g51', date:'พ 24 มิ.ย.',  time:'05:00*', home:'สกอตแลนด์',    away:'บราซิล',     group:'C', venue:'Miami' },
+    { id:'g52', date:'พ 24 มิ.ย.',  time:'05:00*', home:'โมร็อกโก',      away:'เฮติ',        group:'C', venue:'Atlanta' },
+    { id:'g53', date:'พ 24 มิ.ย.',  time:'08:00*', home:'เช็กเกีย',      away:'เม็กซิโก',   group:'A', venue:'Mexico City' },
+    { id:'g54', date:'พ 24 มิ.ย.',  time:'08:00*', home:'แอฟริกาใต้',   away:'เกาหลีใต้',  group:'A', venue:'Monterrey' },
+    // June 25
+    { id:'g55', date:'พฤ 25 มิ.ย.', time:'03:00*', home:'เอกวาดอร์',    away:'เยอรมนี',    group:'E', venue:'New York/NJ' },
+    { id:'g56', date:'พฤ 25 มิ.ย.', time:'03:00*', home:'กือราเซา',      away:'ไอวอรีโคสต์',group:'E', venue:'Philadelphia' },
+    { id:'g57', date:'พฤ 25 มิ.ย.', time:'06:00*', home:'ญี่ปุ่น',       away:'สวีเดน',     group:'F', venue:'Dallas' },
+    { id:'g58', date:'พฤ 25 มิ.ย.', time:'06:00*', home:'ตูนิเซีย',      away:'เนเธอร์แลนด์',group:'F', venue:'Kansas City' },
+    { id:'g59', date:'พฤ 25 มิ.ย.', time:'09:00*', home:'ตุรกี',         away:'สหรัฐอเมริกา',group:'D', venue:'Los Angeles' },
+    { id:'g60', date:'พฤ 25 มิ.ย.', time:'09:00*', home:'ปารากวัย',      away:'ออสเตรเลีย', group:'D', venue:'San Francisco' },
+    // June 26
+    { id:'g61', date:'ศ 26 มิ.ย.',  time:'02:00*', home:'นอร์เวย์',      away:'ฝรั่งเศส',   group:'I', venue:'Boston' },
+    { id:'g62', date:'ศ 26 มิ.ย.',  time:'02:00*', home:'เซเนกัล',       away:'อิรัก',      group:'I', venue:'Toronto' },
+    { id:'g63', date:'ศ 26 มิ.ย.',  time:'07:00*', home:'กาบูเวร์ดี',   away:'ซาอุดีอาระเบีย',group:'H', venue:'Houston' },
+    { id:'g64', date:'ศ 26 มิ.ย.',  time:'07:00*', home:'อุรุกวัย',      away:'สเปน',        group:'H', venue:'Guadalajara' },
+    { id:'g65', date:'ศ 26 มิ.ย.',  time:'10:00*', home:'อียิปต์',       away:'อิหร่าน',    group:'G', venue:'Seattle' },
+    { id:'g66', date:'ศ 26 มิ.ย.',  time:'10:00*', home:'นิวซีแลนด์',   away:'เบลเยียม',   group:'G', venue:'Vancouver' },
+    // June 27
+    { id:'g67', date:'ส 27 มิ.ย.',  time:'04:00*', home:'ปานามา',        away:'อังกฤษ',     group:'L', venue:'New York/NJ' },
+    { id:'g68', date:'ส 27 มิ.ย.',  time:'04:00*', home:'โครเอเชีย',    away:'กานา',       group:'L', venue:'Philadelphia' },
+    { id:'g69', date:'ส 27 มิ.ย.',  time:'06:30*', home:'โคลอมเบีย',   away:'โปรตุเกส',   group:'K', venue:'Miami' },
+    { id:'g70', date:'ส 27 มิ.ย.',  time:'06:30*', home:'คองโก DR',     away:'อุซเบกิสถาน',group:'K', venue:'Atlanta' },
+    { id:'g71', date:'ส 27 มิ.ย.',  time:'09:00*', home:'แอลจีเรีย',   away:'ออสเตรีย',   group:'J', venue:'Kansas City' },
+    { id:'g72', date:'ส 27 มิ.ย.',  time:'09:00*', home:'จอร์แดน',      away:'อาร์เจนตินา',group:'J', venue:'Dallas' },
+  ],
+  r32: [
+    { id:'r32-1',  date:'อา 28 มิ.ย.', time:'02:00*', home:'TBD', away:'TBD', group:'รอบ 32', venue:'Los Angeles' },
+    { id:'r32-2',  date:'จ 29 มิ.ย.',  time:'02:00*', home:'TBD', away:'TBD', group:'รอบ 32', venue:'Houston' },
+    { id:'r32-3',  date:'จ 29 มิ.ย.',  time:'03:30*', home:'TBD', away:'TBD', group:'รอบ 32', venue:'Boston' },
+    { id:'r32-4',  date:'จ 29 มิ.ย.',  time:'08:00*', home:'TBD', away:'TBD', group:'รอบ 32', venue:'Monterrey' },
+    { id:'r32-5',  date:'อ 30 มิ.ย.',  time:'00:00*', home:'TBD', away:'TBD', group:'รอบ 32', venue:'Dallas' },
+    { id:'r32-6',  date:'อ 30 มิ.ย.',  time:'04:00*', home:'TBD', away:'TBD', group:'รอบ 32', venue:'New York/NJ' },
+    { id:'r32-7',  date:'อ 30 มิ.ย.',  time:'08:00*', home:'TBD', away:'TBD', group:'รอบ 32', venue:'Mexico City' },
+    { id:'r32-8',  date:'พ 1 ก.ค.',   time:'23:00',   home:'TBD', away:'TBD', group:'รอบ 32', venue:'Atlanta' },
+    { id:'r32-9',  date:'พ 1 ก.ค.',   time:'03:00*',  home:'TBD', away:'TBD', group:'รอบ 32', venue:'Seattle' },
+    { id:'r32-10', date:'พ 1 ก.ค.',   time:'03:00*',  home:'TBD', away:'TBD', group:'รอบ 32', venue:'San Francisco' },
+    { id:'r32-11', date:'พฤ 2 ก.ค.',  time:'02:00*',  home:'TBD', away:'TBD', group:'รอบ 32', venue:'Los Angeles' },
+    { id:'r32-12', date:'พฤ 2 ก.ค.',  time:'06:00*',  home:'TBD', away:'TBD', group:'รอบ 32', venue:'Toronto' },
+    { id:'r32-13', date:'พฤ 2 ก.ค.',  time:'10:00*',  home:'TBD', away:'TBD', group:'รอบ 32', venue:'Vancouver' },
+    { id:'r32-14', date:'ศ 3 ก.ค.',   time:'01:00*',  home:'TBD', away:'TBD', group:'รอบ 32', venue:'Dallas' },
+    { id:'r32-15', date:'ศ 3 ก.ค.',   time:'05:00*',  home:'TBD', away:'TBD', group:'รอบ 32', venue:'Miami' },
+    { id:'r32-16', date:'ศ 3 ก.ค.',   time:'08:30*',  home:'TBD', away:'TBD', group:'รอบ 32', venue:'Kansas City' },
+  ],
+  r16: [
+    { id:'r16-1', date:'ส 4 ก.ค.',   time:'00:00*', home:'TBD', away:'TBD', group:'รอบ 16', venue:'Houston' },
+    { id:'r16-2', date:'ส 4 ก.ค.',   time:'04:00*', home:'TBD', away:'TBD', group:'รอบ 16', venue:'Philadelphia' },
+    { id:'r16-3', date:'อา 5 ก.ค.',  time:'03:00*', home:'TBD', away:'TBD', group:'รอบ 16', venue:'New York/NJ' },
+    { id:'r16-4', date:'อา 5 ก.ค.',  time:'07:00*', home:'TBD', away:'TBD', group:'รอบ 16', venue:'Mexico City' },
+    { id:'r16-5', date:'จ 6 ก.ค.',   time:'02:00*', home:'TBD', away:'TBD', group:'รอบ 16', venue:'Dallas' },
+    { id:'r16-6', date:'จ 6 ก.ค.',   time:'07:00*', home:'TBD', away:'TBD', group:'รอบ 16', venue:'Seattle' },
+    { id:'r16-7', date:'อ 7 ก.ค.',   time:'23:00',  home:'TBD', away:'TBD', group:'รอบ 16', venue:'Atlanta' },
+    { id:'r16-8', date:'อ 7 ก.ค.',   time:'03:00*', home:'TBD', away:'TBD', group:'รอบ 16', venue:'Vancouver' },
+  ],
+  qf: [
+    { id:'qf1', date:'พฤ 9 ก.ค.',  time:'03:00*', home:'TBD', away:'TBD', group:'QF', venue:'Boston' },
+    { id:'qf2', date:'ศ 10 ก.ค.',  time:'02:00*', home:'TBD', away:'TBD', group:'QF', venue:'Los Angeles' },
+    { id:'qf3', date:'ส 11 ก.ค.',  time:'04:00*', home:'TBD', away:'TBD', group:'QF', venue:'Miami' },
+    { id:'qf4', date:'ส 11 ก.ค.',  time:'08:00*', home:'TBD', away:'TBD', group:'QF', venue:'Kansas City' },
+  ],
+  sf: [
+    { id:'sf1', date:'อ 14 ก.ค.',  time:'02:00*', home:'TBD', away:'TBD', group:'SF', venue:'Dallas' },
+    { id:'sf2', date:'พ 15 ก.ค.',  time:'02:00*', home:'TBD', away:'TBD', group:'SF', venue:'Atlanta' },
+  ],
+  final: [
+    { id:'3rd',   date:'ส 18 ก.ค.', time:'04:00*', home:'TBD', away:'TBD', group:'อันดับ 3', venue:'Miami' },
+    { id:'final', date:'อา 19 ก.ค.', time:'02:00*', home:'TBD', away:'TBD', group:'Final',    venue:'New York/NJ' },
+  ]
+};
+
+// ── CONFIG ────────────────────────────────────────────────────────────────
+const API_URL = 'https://script.google.com/macros/s/AKfycbzizzYsNPyzqC4yAi3KsdgZMNIhW4atZfFRLyZjNFFHU6GALdFgip6XvbzzaJsxneKVow/exec';
+
+// ── STATE ─────────────────────────────────────────────────────────────────
+let players = [];
+let preds = {};      // { "matchId|name": {h,a} }
+let actuals = {};    // { matchId: {h,a} }
+let currentUser = null;
+let isAdmin = false;
+let currentStage = 'group';
+
+// ── API HELPERS ───────────────────────────────────────────────────────────
+async function apiGet(action) {
+  const res = await fetch(`${API_URL}?action=${action}`);
+  return res.json();
+}
+
+async function apiPost(body) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(body)
+  });
+  return res.json();
+}
+
+// ── LOADING ───────────────────────────────────────────────────────────────
+async function loadAll() {
+  try {
+    const predRows = await apiGet('getPredictions');
+    preds = {};
+    players = [];
+    const seen = new Set();
+    (predRows || []).forEach(r => {
+      preds[r.matchId + '|' + r.name] = { h: String(r.homeScore), a: String(r.awayScore) };
+      if (!seen.has(r.name)) { seen.add(r.name); players.push(r.name); }
+    });
+  } catch (e) {
+    showError('โหลดข้อมูลคำทายไม่สำเร็จ ลองรีเฟรชหน้าใหม่');
+  }
+
+  try {
+    const actualRows = await apiGet('getActuals');
+    actuals = {};
+    (actualRows || []).forEach(r => {
+      actuals[r.matchId] = { h: String(r.homeScore), a: String(r.awayScore) };
+    });
+  } catch (e) {
+    showError('โหลดผลจริงไม่สำเร็จ ลองรีเฟรชหน้าใหม่');
+  }
+
+  document.getElementById('loadingMsg').style.display = 'none';
+  renderExistingPlayers();
+
+  const savedUser = sessionStorage.getItem('wc26_current_user');
+  if (savedUser) {
+    currentUser = savedUser;
+    if (!players.includes(savedUser)) players.push(savedUser);
+    enterApp();
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById('loadingMsg');
+  el.style.display = 'block';
+  el.style.color = '#ff6b6b';
+  el.textContent = '⚠️ ' + msg;
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────
+function renderExistingPlayers() {
+  const c = document.getElementById('existingPlayers');
+  if (players.length === 0) {
+    c.innerHTML = '';
+    return;
+  }
+  c.innerHTML = '<div style="font-size:12px;color:var(--text-dim);width:100%;margin-bottom:6px;">หรือเลือกชื่อที่มีอยู่:</div>' +
+    players.map(p => `<div class="player-tag" style="cursor:pointer;" onclick="quickLogin('${p.replace(/'/g, "\\'")}')"><span>⚽ ${escapeHtml(p)}</span></div>`).join('');
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function quickLogin(name) {
+  document.getElementById('loginNameInput').value = name;
+  loginPlayer();
+}
+
+async function loginPlayer() {
+  const inp = document.getElementById('loginNameInput');
+  const name = inp.value.trim();
+  if (!name) return;
+
+  if (!players.includes(name)) players.push(name);
+  currentUser = name;
+  sessionStorage.setItem('wc26_current_user', name);
+  enterApp();
+}
+
+function switchUser() {
+  currentUser = null;
+  sessionStorage.removeItem('wc26_current_user');
+  isAdmin = false;
+  document.getElementById('loginGate').style.display = 'block';
+  document.getElementById('activeUserBar').style.display = 'none';
+  document.getElementById('stageTabsWrap').style.display = 'none';
+  document.getElementById('matchesContainer').style.display = 'none';
+  document.getElementById('scoreboard-panel').style.display = 'none';
+  document.getElementById('loginNameInput').value = '';
+  renderExistingPlayers();
+}
+
+function toggleAdmin() {
+  if (isAdmin) {
+    isAdmin = false;
+    renderAllStages();
+    return;
+  }
+  const pw = prompt('รหัสผ่านสำหรับกรอกผลจริง:');
+  if (pw === null) return;
+  // password is verified server-side on save; just enable the input UI here
+  isAdmin = true;
+  window._adminPw = pw;
+  renderAllStages();
+}
+
+function enterApp() {
+  document.getElementById('loginGate').style.display = 'none';
+  document.getElementById('activeUserBar').style.display = 'block';
+  document.getElementById('activeUserName').textContent = currentUser;
+  document.getElementById('adminToggleBtn').style.display = 'inline-block';
+  document.getElementById('stageTabsWrap').style.display = 'block';
+  document.getElementById('matchesContainer').style.display = 'block';
+  renderAllStages();
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────
+function switchTab(stage, label, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  currentStage = stage;
+  const sb = document.getElementById('scoreboard-panel');
+  const mc = document.getElementById('matchesContainer');
+  if (stage === 'scoreboard') {
+    sb.style.display = 'block';
+    mc.style.display = 'none';
+    renderScoreboard();
+  } else {
+    sb.style.display = 'none';
+    mc.style.display = 'block';
+    document.querySelectorAll('.stage-panel').forEach(p => p.classList.remove('active'));
+    const panel = document.getElementById('panel-' + stage);
+    if (panel) panel.classList.add('active');
+  }
+}
+
+// ── RENDER MATCHES ────────────────────────────────────────────────────────
+function renderAllStages() {
+  const container = document.getElementById('matchesContainer');
+  container.innerHTML = '';
+  Object.keys(MATCHES).forEach(stage => {
+    const div = document.createElement('div');
+    div.className = 'stage-panel' + (stage === currentStage ? ' active' : '');
+    div.id = 'panel-' + stage;
+    div.appendChild(renderStage(stage, MATCHES[stage]));
+    container.appendChild(div);
+  });
+}
+
+function renderStage(stage, matches) {
+  const frag = document.createDocumentFragment();
+  let lastDate = '';
+  matches.forEach(m => {
+    if (m.date !== lastDate) {
+      const dh = document.createElement('div');
+      dh.className = 'day-header';
+      dh.textContent = `📅 ${m.date} · เวลาไทย`;
+      frag.appendChild(dh);
+      lastDate = m.date;
+    }
+    frag.appendChild(renderMatch(m));
+  });
+  return frag;
+}
+
+function renderMatch(m) {
+  const card = document.createElement('div');
+  card.className = 'match-card';
+  card.id = 'match-' + m.id;
+
+  const actualH = actuals[m.id]?.h ?? '';
+  const actualA = actuals[m.id]?.a ?? '';
+
+  const key = m.id + '|' + currentUser;
+  const ph = preds[key]?.h ?? '';
+  const pa = preds[key]?.a ?? '';
+  const badge = calcBadge(ph, pa, actualH, actualA);
+
+  const predRow = `<div class="predictions-rows">
+    <div class="prediction-row">
+      <div class="pred-name" title="${escapeHtml(currentUser)}">👤 คำทายของคุณ</div>
+      <div class="pred-inputs">
+        <input class="score-input" type="number" min="0" max="99"
+          id="ph_${m.id}" value="${ph}"
+          oninput="onPredInput('${m.id}')"
+          placeholder="–" />
+        <span class="score-sep">:</span>
+        <input class="score-input" type="number" min="0" max="99"
+          id="pa_${m.id}" value="${pa}"
+          oninput="onPredInput('${m.id}')"
+          placeholder="–" />
+        <span class="pred-result-badge" id="badge_${m.id}">${badge.label}</span>
+        <span class="save-status" id="save_${m.id}" style="font-size:11px;color:var(--text-dim);margin-left:6px;"></span>
+      </div>
+    </div>
+  </div>`;
+
+  const actualRow = isAdmin ? `
+    <div class="actual-score-row">
+      <div class="actual-label">ผลจริง (admin)</div>
+      <div class="actual-inputs">
+        <input class="actual-input" type="number" min="0" max="99"
+          id="ah_${m.id}" value="${actualH}" placeholder="–" />
+        <span class="score-sep" style="color:#7CFC8C">:</span>
+        <input class="actual-input" type="number" min="0" max="99"
+          id="aa_${m.id}" value="${actualA}" placeholder="–" />
+        <button class="calc-btn" onclick="saveActual('${m.id}')">บันทึก</button>
+      </div>
+    </div>` : (actualH !== '' && actualA !== '' ? `
+    <div class="actual-score-row">
+      <div class="actual-label">ผลจริง</div>
+      <div class="actual-inputs">
+        <span class="actual-input" style="display:inline-flex;align-items:center;justify-content:center;">${actualH}</span>
+        <span class="score-sep" style="color:#7CFC8C">:</span>
+        <span class="actual-input" style="display:inline-flex;align-items:center;justify-content:center;">${actualA}</span>
+      </div>
+    </div>` : '');
+
+  card.innerHTML = `
+    <div class="match-meta">
+      <span class="group-badge">${m.group}</span>
+      <span>🕐 ${m.time} น. · ${m.venue}</span>
+    </div>
+    <div class="match-teams">
+      <div class="team-name home">${m.home}</div>
+      <div class="vs-box">VS</div>
+      <div class="team-name away">${m.away}</div>
+    </div>
+    ${predRow}
+    ${actualRow}`;
+
+  return card;
+}
+
+// ── PREDICTIONS ───────────────────────────────────────────────────────────
+let savePredTimers = {};
+function onPredInput(matchId) {
+  const h = document.getElementById(`ph_${matchId}`)?.value;
+  const a = document.getElementById(`pa_${matchId}`)?.value;
+  preds[matchId + '|' + currentUser] = { h, a };
+
+  const ah = actuals[matchId]?.h ?? '';
+  const aa = actuals[matchId]?.a ?? '';
+  const badge = calcBadge(h, a, ah, aa);
+  const el = document.getElementById(`badge_${matchId}`);
+  if (el) {
+    el.textContent = badge.label;
+    el.className = 'pred-result-badge ' + badge.cls;
+  }
+
+  const statusEl = document.getElementById(`save_${matchId}`);
+  if (statusEl) statusEl.textContent = 'กำลังบันทึก...';
+
+  clearTimeout(savePredTimers[matchId]);
+  savePredTimers[matchId] = setTimeout(() => savePrediction(matchId, h, a), 600);
+}
+
+async function savePrediction(matchId, h, a) {
+  const statusEl = document.getElementById(`save_${matchId}`);
+  if (h === '' || a === '') {
+    if (statusEl) statusEl.textContent = '';
+    return;
+  }
+  try {
+    await apiPost({
+      action: 'savePrediction',
+      name: currentUser,
+      matchId: matchId,
+      homeScore: parseInt(h),
+      awayScore: parseInt(a)
+    });
+    if (statusEl) {
+      statusEl.textContent = '✓ บันทึกแล้ว';
+      statusEl.style.color = 'var(--green-light)';
+      setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 2000);
+    }
+  } catch (e) {
+    if (statusEl) {
+      statusEl.textContent = '✗ บันทึกไม่สำเร็จ';
+      statusEl.style.color = '#ff6b6b';
+    }
+  }
+}
+
+async function saveActual(matchId) {
+  const h = document.getElementById(`ah_${matchId}`)?.value;
+  const a = document.getElementById(`aa_${matchId}`)?.value;
+  if (h === '' || a === '') {
+    alert('กรุณากรอกผลทั้งสองช่อง');
+    return;
+  }
+  try {
+    const result = await apiPost({
+      action: 'saveActual',
+      matchId: matchId,
+      homeScore: parseInt(h),
+      awayScore: parseInt(a),
+      password: window._adminPw || ''
+    });
+    if (result.error) {
+      alert('รหัสผ่านไม่ถูกต้อง');
+      isAdmin = false;
+      window._adminPw = null;
+      renderAllStages();
+      return;
+    }
+    actuals[matchId] = { h: String(h), a: String(a) };
+    renderAllStages();
+    alert('บันทึกผลจริงแล้ว');
+  } catch (e) {
+    alert('บันทึกไม่สำเร็จ กรุณาลองใหม่');
+  }
+}
+
+// ── SCORING ───────────────────────────────────────────────────────────────
+function getResult(h, a) {
+  const hi = parseInt(h), ai = parseInt(a);
+  if (isNaN(hi) || isNaN(ai)) return null;
+  return hi > ai ? 'H' : ai > hi ? 'A' : 'D';
+}
+
+function calcPoints(ph, pa, ah, aa) {
+  if (ph==='' || pa==='' || ah==='' || aa==='' || ph==null || pa==null || ah==null || aa==null) return null;
+  const pr = getResult(ph, pa), ar = getResult(ah, aa);
+  if (!pr || !ar) return null;
+  if (pr !== ar) return 0;
+  if (parseInt(ph)===parseInt(ah) && parseInt(pa)===parseInt(aa)) return 3;
+  return 1;
+}
+
+function calcBadge(ph, pa, ah, aa) {
+  const pts = calcPoints(ph, pa, ah, aa);
+  if (pts === null) return { label: '', cls: '' };
+  if (pts === 3) return { label: '+3 ⭐', cls: 'badge-3' };
+  if (pts === 1) return { label: '+1', cls: 'badge-1' };
+  return { label: '0', cls: 'badge-0' };
+}
+
+// ── SCOREBOARD ────────────────────────────────────────────────────────────
+async function renderScoreboard() {
+  const tbody = document.getElementById('scoreboardBody');
+  tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:24px;">กำลังโหลด...</td></tr>`;
+
+  // refresh latest data from sheet
+  try {
+    const predRows = await apiGet('getPredictions');
+    preds = {};
+    players = [];
+    const seen = new Set();
+    (predRows || []).forEach(r => {
+      preds[r.matchId + '|' + r.name] = { h: String(r.homeScore), a: String(r.awayScore) };
+      if (!seen.has(r.name)) { seen.add(r.name); players.push(r.name); }
+    });
+    if (currentUser && !players.includes(currentUser)) players.push(currentUser);
+
+    const actualRows = await apiGet('getActuals');
+    actuals = {};
+    (actualRows || []).forEach(r => {
+      actuals[r.matchId] = { h: String(r.homeScore), a: String(r.awayScore) };
+    });
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ff6b6b;padding:24px;">โหลดข้อมูลไม่สำเร็จ ลองใหม่อีกครั้ง</td></tr>`;
+    return;
+  }
+
+  const allMatches = Object.values(MATCHES).flat();
+  const stats = {};
+  players.forEach(p => { stats[p] = { total:0, three:0, one:0 }; });
+
+  allMatches.forEach(m => {
+    const ah = actuals[m.id]?.h ?? '';
+    const aa = actuals[m.id]?.a ?? '';
+    if (ah==='' || aa==='') return;
+    players.forEach(p => {
+      const key = m.id + '|' + p;
+      const ph = preds[key]?.h ?? '';
+      const pa = preds[key]?.a ?? '';
+      const pts = calcPoints(ph, pa, ah, aa);
+      if (pts === null) return;
+      stats[p].total += pts;
+      if (pts===3) stats[p].three++;
+      else if (pts===1) stats[p].one++;
+    });
+  });
+
+  const sorted = players.slice().sort((a,b) => stats[b].total - stats[a].total);
+  if (sorted.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:24px;">
+      ยังไม่มีผู้เข้าร่วม</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = sorted.map((p, i) => {
+    const s = stats[p];
+    const rankClass = i===0?'r1':i===1?'r2':i===2?'r3':'';
+    const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+    const isMe = p === currentUser ? ' style="background:var(--highlight);"' : '';
+    return `<tr${isMe}>
+      <td><span class="rank-num ${rankClass}">${medal||i+1}</span></td>
+      <td style="font-weight:600">${escapeHtml(p)}</td>
+      <td><span class="total-pts">${s.total}</span></td>
+      <td style="color:#C9A84C">${s.three}</td>
+      <td style="color:var(--green-light)">${s.one}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('loginNameInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') loginPlayer();
+  });
+  loadAll();
+});
+</script>
+</body>
+</html>
