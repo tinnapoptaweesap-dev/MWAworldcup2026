@@ -697,6 +697,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbzizzYsNPyzqC4yAi3KsdgZ
 let players = [];
 let preds = {};      // { "matchId|name": {h,a} }
 let actuals = {};    // { matchId: {h,a} }
+let locks = {};       // { matchId: true/false }
 let currentUser = null;
 let isAdmin = false;
 let currentStage = 'group';
@@ -740,6 +741,13 @@ async function loadAll() {
   } catch (e) {
     showError('โหลดผลจริงไม่สำเร็จ ลองรีเฟรชหน้าใหม่');
   }
+
+  try {
+    locks = await apiGet('getLocks') || {};
+  } catch (e) {
+    locks = {};
+  }
+
 
   document.getElementById('loadingMsg').style.display = 'none';
   renderExistingPlayers();
@@ -888,6 +896,9 @@ function renderMatch(m) {
   const ph = preds[key]?.h ?? '';
   const pa = preds[key]?.a ?? '';
   const badge = calcBadge(ph, pa, actualH, actualA);
+  const isLocked = !!locks[m.id];
+
+  const lockBadge = isLocked ? `<span class="lock-badge" style="font-size:11px;color:var(--text-dim);margin-left:6px;">🔒 ล็อกแล้ว</span>` : '';
 
   const predRow = `<div class="predictions-rows">
     <div class="prediction-row">
@@ -896,14 +907,17 @@ function renderMatch(m) {
         <input class="score-input" type="number" min="0" max="99"
           id="ph_${m.id}" value="${ph}"
           oninput="onPredInput('${m.id}')"
+          ${isLocked ? 'disabled style="background:#2a2a2a;color:#888;cursor:not-allowed;"' : ''}
           placeholder="–" />
         <span class="score-sep">:</span>
         <input class="score-input" type="number" min="0" max="99"
           id="pa_${m.id}" value="${pa}"
           oninput="onPredInput('${m.id}')"
+          ${isLocked ? 'disabled style="background:#2a2a2a;color:#888;cursor:not-allowed;"' : ''}
           placeholder="–" />
         <span class="pred-result-badge" id="badge_${m.id}">${badge.label}</span>
         <span class="save-status" id="save_${m.id}" style="font-size:11px;color:var(--text-dim);margin-left:6px;"></span>
+        ${lockBadge}
       </div>
     </div>
   </div>`;
@@ -918,6 +932,7 @@ function renderMatch(m) {
         <input class="actual-input" type="number" min="0" max="99"
           id="aa_${m.id}" value="${actualA}" placeholder="–" />
         <button class="calc-btn" onclick="saveActual('${m.id}')">บันทึก</button>
+        <button class="calc-btn" style="background:${isLocked ? '#666' : '#b33'};margin-left:6px;" onclick="toggleLock('${m.id}')">${isLocked ? '🔓 ปลดล็อก' : '🔒 ล็อกแมตช์นี้'}</button>
       </div>
     </div>` : (actualH !== '' && actualA !== '' ? `
     <div class="actual-score-row">
@@ -948,6 +963,7 @@ function renderMatch(m) {
 // ── PREDICTIONS ───────────────────────────────────────────────────────────
 let savePredTimers = {};
 function onPredInput(matchId) {
+  if (locks[matchId]) return;
   const h = document.getElementById(`ph_${matchId}`)?.value;
   const a = document.getElementById(`pa_${matchId}`)?.value;
   preds[matchId + '|' + currentUser] = { h, a };
@@ -975,13 +991,22 @@ async function savePrediction(matchId, h, a) {
     return;
   }
   try {
-    await apiPost({
+    const result = await apiPost({
       action: 'savePrediction',
       name: currentUser,
       matchId: matchId,
       homeScore: parseInt(h),
       awayScore: parseInt(a)
     });
+    if (result.error) {
+      if (statusEl) {
+        statusEl.textContent = '🔒 แมตช์นี้ถูกล็อกแล้ว';
+        statusEl.style.color = '#ff6b6b';
+      }
+      locks[matchId] = true;
+      renderAllStages();
+      return;
+    }
     if (statusEl) {
       statusEl.textContent = '✓ บันทึกแล้ว';
       statusEl.style.color = 'var(--green-light)';
@@ -1022,6 +1047,29 @@ async function saveActual(matchId) {
     alert('บันทึกผลจริงแล้ว');
   } catch (e) {
     alert('บันทึกไม่สำเร็จ กรุณาลองใหม่');
+  }
+}
+
+async function toggleLock(matchId) {
+  const newLocked = !locks[matchId];
+  try {
+    const result = await apiPost({
+      action: 'setLock',
+      matchId: matchId,
+      locked: newLocked,
+      password: window._adminPw || ''
+    });
+    if (result.error) {
+      alert('รหัสผ่านไม่ถูกต้อง');
+      isAdmin = false;
+      window._adminPw = null;
+      renderAllStages();
+      return;
+    }
+    locks[matchId] = newLocked;
+    renderAllStages();
+  } catch (e) {
+    alert('บันทึกสถานะล็อกไม่สำเร็จ กรุณาลองใหม่');
   }
 }
 
