@@ -528,12 +528,45 @@
     <div class="tab" onclick="switchTab('qf','รอบก่อนรองฯ',this)">รอบก่อนรองฯ</div>
     <div class="tab" onclick="switchTab('sf','รอบรองชนะเลิศ',this)">รอบรองฯ</div>
     <div class="tab" onclick="switchTab('final','รอบชิงชนะเลิศ',this)">รอบชิง</div>
+    <div class="tab" onclick="switchTab('special','👑 ทายแชมป์/ดาวซัลโว',this)">👑 ทายแชมป์/ดาวซัลโว</div>
     <div class="tab" onclick="switchTab('scoreboard','คะแนนรวม',this)">🏆 คะแนนรวม</div>
+    <div class="tab" onclick="switchTab('prizes','เงินรางวัล',this)">🎁 เงินรางวัล</div>
   </div>
 </div>
 
 <!-- MATCHES PANELS -->
 <div class="matches-container" id="matchesContainer" style="display:none;"></div>
+
+<!-- SPECIAL PREDICTIONS (champion / topscorer) -->
+<div class="scoreboard-section" id="special-panel" style="display:none; padding-bottom:40px;">
+  <div class="section-title">👑 ทายแชมป์ และ ดาวซัลโว</div>
+  <div class="rule-note">
+    📌 ทายแชมป์: ผู้ที่ทายชื่อทีมแชมป์ถูกจะได้รับเงินรางวัล 3,000 บาท หารเท่ากันหากมีหลายคนทายถูก
+    หากไม่มีใครทายถูก เงินรางวัลจะแบ่งให้ผู้ที่ทายผลนัดชิงชนะเลิศถูก<br>
+    📌 ดาวซัลโว: ทายชื่อนักเตะที่จะเป็นดาวซัลโวของทัวร์นาเมนต์ รับเงินรางวัล 1,000 บาท หารเท่ากันหากทายถูกหลายคน
+  </div>
+  <div id="specialFormArea"></div>
+  <div id="specialActualArea" style="margin-top:20px;"></div>
+</div>
+
+<!-- PRIZES -->
+<div class="scoreboard-section" id="prizes-panel" style="display:none; padding-bottom:40px;">
+  <div class="section-title">🎁 เงินรางวัลแต่ละช่วง</div>
+  <div id="prizesArea"></div>
+
+  <div class="section-title" style="margin-top:28px;">💰 เงินรางวัลสะสมของแต่ละคน</div>
+  <table class="scoreboard-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>ผู้ทาย</th>
+        <th>เงินรางวัลสะสม (บาท)</th>
+      </tr>
+    </thead>
+    <tbody id="prizeSummaryBody"></tbody>
+  </table>
+</div>
+
 
 <!-- SCOREBOARD -->
 <div class="scoreboard-section" id="scoreboard-panel" style="display:none; padding-bottom:40px;">
@@ -698,9 +731,24 @@ let players = [];
 let preds = {};      // { "matchId|name": {h,a} }
 let actuals = {};    // { matchId: {h,a} }
 let locks = {};       // { matchId: true/false }
+let specials = {};    // { "specialId|name": value }
+let specialActuals = {}; // { specialId: value }
+let prizes = [];      // [{period,label,rank1,rank2,rank3,status}]
+let results = {};     // { period: [{name,points,prize,rank}] }
 let currentUser = null;
 let isAdmin = false;
 let currentStage = 'group';
+
+// Mirrors PERIOD_MATCHES in Apps Script — used for client-side period score calc
+const PERIOD_MATCHES = {
+  r1: ['g1','g2','g3','g4','g5','g6','g7','g8','g9','g10','g11','g12','g13','g14','g15','g16','g17','g18','g19','g20','g21','g22','g23','g24'],
+  r2: ['g25','g26','g27','g28','g29','g30','g31','g32','g33','g34','g35','g36','g37','g38','g39','g40','g41','g42','g43','g44','g45','g46','g47','g48','g49','g50','g51','g52','g53','g54'],
+  r3: ['g55','g56','g57','g58','g59','g60','g61','g62','g63','g64','g65','g66','g67','g68','g69','g70','g71','g72','r32-1'],
+  r32: ['r32-2','r32-3','r32-4','r32-5','r32-6','r32-7','r32-8','r32-9','r32-10','r32-11','r32-12','r32-13','r32-14','r32-15','r32-16'],
+  knockout: ['r16-1','r16-2','r16-3','r16-4','r16-5','r16-6','r16-7','r16-8','qf1','qf2','qf3','qf4','sf1','sf2'],
+  third: ['3rd'],
+  final: ['final']
+};
 
 // ── API HELPERS ───────────────────────────────────────────────────────────
 async function apiGet(action) {
@@ -746,6 +794,34 @@ async function loadAll() {
     locks = await apiGet('getLocks') || {};
   } catch (e) {
     locks = {};
+  }
+
+  try {
+    const specialRows = await apiGet('getSpecials');
+    specials = {};
+    (specialRows || []).forEach(r => {
+      specials[r.specialId + '|' + r.name] = r.value;
+    });
+  } catch (e) {
+    specials = {};
+  }
+
+  try {
+    specialActuals = await apiGet('getSpecialActuals') || {};
+  } catch (e) {
+    specialActuals = {};
+  }
+
+  try {
+    prizes = await apiGet('getPrizes') || [];
+  } catch (e) {
+    prizes = [];
+  }
+
+  try {
+    results = await apiGet('getResults') || {};
+  } catch (e) {
+    results = {};
   }
 
 
@@ -842,12 +918,24 @@ function switchTab(stage, label, el) {
   currentStage = stage;
   const sb = document.getElementById('scoreboard-panel');
   const mc = document.getElementById('matchesContainer');
+  const sp = document.getElementById('special-panel');
+  const pp = document.getElementById('prizes-panel');
+
+  sb.style.display = 'none';
+  mc.style.display = 'none';
+  sp.style.display = 'none';
+  pp.style.display = 'none';
+
   if (stage === 'scoreboard') {
     sb.style.display = 'block';
-    mc.style.display = 'none';
     renderScoreboard();
+  } else if (stage === 'special') {
+    sp.style.display = 'block';
+    renderSpecialPanel();
+  } else if (stage === 'prizes') {
+    pp.style.display = 'block';
+    renderPrizesPanel();
   } else {
-    sb.style.display = 'none';
     mc.style.display = 'block';
     document.querySelectorAll('.stage-panel').forEach(p => p.classList.remove('active'));
     const panel = document.getElementById('panel-' + stage);
@@ -1161,6 +1249,366 @@ async function renderScoreboard() {
       <td><span class="total-pts">${s.total}</span></td>
       <td style="color:#C9A84C">${s.three}</td>
       <td style="color:var(--green-light)">${s.one}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── SPECIAL PREDICTIONS (champion / topscorer) ───────────────────────────
+const COMMON_TEAMS = ['อาร์เจนตินา','บราซิล','ฝรั่งเศส','อังกฤษ','สเปน','เยอรมนี','โปรตุเกส','เนเธอร์แลนด์','เบลเยียม','อิตาลี','โครเอเชีย','อุรุกวัย','โคลอมเบีย','สหรัฐอเมริกา','เม็กซิโก','โมร็อกโก'];
+
+function renderSpecialPanel() {
+  const formArea = document.getElementById('specialFormArea');
+  const champKey = 'champion|' + currentUser;
+  const scorerKey = 'topscorer|' + currentUser;
+  const champVal = specials[champKey] ?? '';
+  const scorerVal = specials[scorerKey] ?? '';
+  const champLocked = !!locks['champion'];
+  const scorerLocked = !!locks['topscorer'];
+
+  formArea.innerHTML = `
+    <div class="player-setup" style="align-items:flex-end; flex-wrap:wrap; gap:16px;">
+      <div style="min-width:220px;">
+        <label>👑 ทายแชมป์ (ชื่อทีม)</label>
+        <input type="text" id="champInput" value="${escapeHtml(champVal)}" placeholder="เช่น บราซิล"
+          list="teamSuggestions"
+          ${champLocked ? 'disabled style="background:#2a2a2a;color:#888;"' : ''}
+          oninput="onSpecialInput('champion')" />
+        <span class="save-status" id="save_champion" style="font-size:11px;color:var(--text-dim);"></span>
+        ${champLocked ? '<span style="font-size:11px;color:var(--text-dim);margin-left:6px;">🔒 ล็อกแล้ว</span>' : ''}
+      </div>
+      <div style="min-width:220px;">
+        <label>⚽ ทายดาวซัลโว (ชื่อนักเตะ)</label>
+        <input type="text" id="scorerInput" value="${escapeHtml(scorerVal)}" placeholder="เช่น เอ็มบัปเป้"
+          ${scorerLocked ? 'disabled style="background:#2a2a2a;color:#888;"' : ''}
+          oninput="onSpecialInput('topscorer')" />
+        <span class="save-status" id="save_topscorer" style="font-size:11px;color:var(--text-dim);"></span>
+        ${scorerLocked ? '<span style="font-size:11px;color:var(--text-dim);margin-left:6px;">🔒 ล็อกแล้ว</span>' : ''}
+      </div>
+    </div>
+    <datalist id="teamSuggestions">
+      ${COMMON_TEAMS.map(t => `<option value="${t}"></option>`).join('')}
+    </datalist>
+  `;
+
+  const actualArea = document.getElementById('specialActualArea');
+  const champActual = specialActuals['champion'] ?? '';
+  const scorerActual = specialActuals['topscorer'] ?? '';
+
+  if (isAdmin) {
+    actualArea.innerHTML = `
+      <div class="section-title" style="font-size:14px;">ผลจริง (admin)</div>
+      <div class="player-setup" style="align-items:flex-end; flex-wrap:wrap; gap:16px;">
+        <div style="min-width:220px;">
+          <label>แชมป์จริง</label>
+          <input type="text" id="champActualInput" value="${escapeHtml(champActual)}" placeholder="กรอกทีมแชมป์" />
+          <button class="calc-btn" onclick="saveSpecialActual('champion')" style="margin-top:6px;">บันทึก</button>
+          <button class="calc-btn" style="background:${champLocked ? '#666' : '#b33'};margin-left:6px;margin-top:6px;" onclick="toggleSpecialLock('champion')">${champLocked ? '🔓 ปลดล็อก' : '🔒 ล็อก'}</button>
+        </div>
+        <div style="min-width:220px;">
+          <label>ดาวซัลโวจริง</label>
+          <input type="text" id="scorerActualInput" value="${escapeHtml(scorerActual)}" placeholder="กรอกชื่อนักเตะ" />
+          <button class="calc-btn" onclick="saveSpecialActual('topscorer')" style="margin-top:6px;">บันทึก</button>
+          <button class="calc-btn" style="background:${scorerLocked ? '#666' : '#b33'};margin-left:6px;margin-top:6px;" onclick="toggleSpecialLock('topscorer')">${scorerLocked ? '🔓 ปลดล็อก' : '🔒 ล็อก'}</button>
+        </div>
+      </div>
+    `;
+  } else {
+    let html = '';
+    if (champActual) html += `<div style="margin-bottom:6px;">👑 แชมป์จริง: <strong style="color:var(--gold)">${escapeHtml(champActual)}</strong></div>`;
+    if (scorerActual) html += `<div>⚽ ดาวซัลโวจริง: <strong style="color:var(--gold)">${escapeHtml(scorerActual)}</strong></div>`;
+    actualArea.innerHTML = html;
+  }
+}
+
+let saveSpecialTimers = {};
+function onSpecialInput(specialId) {
+  if (locks[specialId]) return;
+  const inputId = specialId === 'champion' ? 'champInput' : 'scorerInput';
+  const val = document.getElementById(inputId)?.value ?? '';
+  specials[specialId + '|' + currentUser] = val;
+
+  const statusEl = document.getElementById('save_' + specialId);
+  if (statusEl) statusEl.textContent = 'กำลังบันทึก...';
+
+  clearTimeout(saveSpecialTimers[specialId]);
+  saveSpecialTimers[specialId] = setTimeout(() => saveSpecial(specialId, val), 600);
+}
+
+async function saveSpecial(specialId, val) {
+  const statusEl = document.getElementById('save_' + specialId);
+  if (!val || !val.trim()) {
+    if (statusEl) statusEl.textContent = '';
+    return;
+  }
+  try {
+    const result = await apiPost({
+      action: 'saveSpecial',
+      name: currentUser,
+      specialId: specialId,
+      value: val.trim()
+    });
+    if (result.error) {
+      if (statusEl) { statusEl.textContent = '🔒 ถูกล็อกแล้ว'; statusEl.style.color = '#ff6b6b'; }
+      locks[specialId] = true;
+      renderSpecialPanel();
+      return;
+    }
+    if (statusEl) {
+      statusEl.textContent = '✓ บันทึกแล้ว';
+      statusEl.style.color = 'var(--green-light)';
+      setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 2000);
+    }
+  } catch (e) {
+    if (statusEl) { statusEl.textContent = '✗ บันทึกไม่สำเร็จ'; statusEl.style.color = '#ff6b6b'; }
+  }
+}
+
+async function saveSpecialActual(specialId) {
+  const inputId = specialId === 'champion' ? 'champActualInput' : 'scorerActualInput';
+  const val = document.getElementById(inputId)?.value?.trim();
+  if (!val) { alert('กรุณากรอกค่า'); return; }
+  try {
+    const result = await apiPost({
+      action: 'saveSpecialActual',
+      specialId: specialId,
+      value: val,
+      password: window._adminPw || ''
+    });
+    if (result.error) {
+      alert('รหัสผ่านไม่ถูกต้อง');
+      isAdmin = false;
+      window._adminPw = null;
+      renderSpecialPanel();
+      return;
+    }
+    specialActuals[specialId] = val;
+    renderSpecialPanel();
+    alert('บันทึกแล้ว');
+  } catch (e) {
+    alert('บันทึกไม่สำเร็จ');
+  }
+}
+
+async function toggleSpecialLock(specialId) {
+  const newLocked = !locks[specialId];
+  try {
+    const result = await apiPost({
+      action: 'setLock',
+      matchId: specialId,
+      locked: newLocked,
+      password: window._adminPw || ''
+    });
+    if (result.error) {
+      alert('รหัสผ่านไม่ถูกต้อง');
+      isAdmin = false;
+      window._adminPw = null;
+      renderSpecialPanel();
+      return;
+    }
+    locks[specialId] = newLocked;
+    renderSpecialPanel();
+  } catch (e) {
+    alert('บันทึกสถานะล็อกไม่สำเร็จ');
+  }
+}
+
+// ── PRIZES ─────────────────────────────────────────────────────────────
+function computePeriodTotals(period) {
+  const matchIds = PERIOD_MATCHES[period] || [];
+  const totals = {};
+  players.forEach(p => totals[p] = 0);
+
+  matchIds.forEach(matchId => {
+    const act = actuals[matchId];
+    if (!act || act.h === '' || act.a === '') return;
+    players.forEach(p => {
+      const pred = preds[matchId + '|' + p];
+      if (!pred) return;
+      const pts = calcPoints(pred.h, pred.a, act.h, act.a);
+      if (pts === null) return;
+      totals[p] = (totals[p] || 0) + pts;
+    });
+  });
+
+  return totals;
+}
+
+function renderPrizesPanel() {
+  const area = document.getElementById('prizesArea');
+  if (!prizes || prizes.length === 0) {
+    area.innerHTML = '<div style="color:var(--text-dim);">กำลังโหลด...</div>';
+    return;
+  }
+
+  const periodLabels = {
+    r1: 'รอบแบ่งกลุ่ม นัดที่ 1 (12-18 มิ.ย.)',
+    r2: 'รอบแบ่งกลุ่ม นัดที่ 2 (18-24 มิ.ย.)',
+    r3: 'รอบแบ่งกลุ่ม นัดที่ 3 (25-28 มิ.ย.)',
+    r32: 'รอบ 32 ทีม (29 มิ.ย. - 4 ก.ค.)',
+    knockout: 'รอบ 16/8/4 ทีม (5-16 ก.ค.)',
+    third: 'ชิงอันดับ 3 (19 ก.ค.)',
+    final: 'ชิงชนะเลิศ (20 ก.ค.)',
+    champion: 'ทายแชมป์',
+    topscorer: 'ทายดาวซัลโว'
+  };
+
+  area.innerHTML = prizes.map(p => {
+    const isClosed = p.status === 'closed';
+    const winners = results[p.period] || [];
+
+    let prizeRowHtml = '';
+    if (isAdmin && !isClosed) {
+      prizeRowHtml = `
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:8px;">
+          <label style="margin:0;">1st:</label>
+          <input type="number" id="prize_${p.period}_1" value="${p.rank1}" style="width:80px;" class="score-input" />
+          <label style="margin:0;">2nd:</label>
+          <input type="number" id="prize_${p.period}_2" value="${p.rank2}" style="width:80px;" class="score-input" />
+          <label style="margin:0;">3rd:</label>
+          <input type="number" id="prize_${p.period}_3" value="${p.rank3}" style="width:80px;" class="score-input" />
+          <button class="calc-btn" onclick="savePrizeAmounts('${p.period}')">บันทึกจำนวนเงิน</button>
+          <button class="calc-btn" style="background:#7CFC8C;color:#111;" onclick="announcePeriod('${p.period}')">📢 ประกาศผล</button>
+        </div>`;
+    } else if (isAdmin && isClosed) {
+      prizeRowHtml = `
+        <div style="margin-top:8px;">
+          <button class="calc-btn" style="background:#666;" onclick="reopenPeriod('${p.period}')">🔄 เปิดแก้ไขใหม่</button>
+        </div>`;
+    } else {
+      prizeRowHtml = `<div style="font-size:13px; color:var(--text-dim); margin-top:4px;">
+        เงินรางวัล: ${formatPrizeLine(p)}
+      </div>`;
+    }
+
+    let winnersHtml = '';
+    if (isClosed) {
+      if (winners.length > 0) {
+        winnersHtml = `<div style="margin-top:10px; padding:10px; background:rgba(255,255,255,0.04); border-radius:8px;">
+          <div style="font-size:12px; color:var(--gold); margin-bottom:6px;">🏅 ผู้ได้รับรางวัล:</div>
+          ${winners.map(w => `<div style="font-size:13px;">
+            ${w.rank === 1 ? '🥇' : w.rank === 2 ? '🥈' : '🥉'} ${escapeHtml(w.name)}
+            — ${w.points} คะแนน — <strong style="color:var(--gold)">${w.prize.toLocaleString()} บาท</strong>
+            ${w.note ? `<span style="color:var(--text-dim); font-size:11px;"> (${escapeHtml(w.note)})</span>` : ''}
+          </div>`).join('')}
+        </div>`;
+      } else {
+        winnersHtml = `<div style="margin-top:10px; font-size:13px; color:var(--text-dim);">ไม่มีผู้ได้รับรางวัลในช่วงนี้</div>`;
+      }
+    }
+
+    return `<div class="match-card" style="margin-bottom:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <div style="font-weight:700;">${periodLabels[p.period] || p.label}</div>
+        <div style="font-size:12px; color:${isClosed ? 'var(--green-light)' : 'var(--text-dim)'};">
+          ${isClosed ? '✅ ประกาศผลแล้ว' : '⏳ ยังไม่ประกาศผล'}
+        </div>
+      </div>
+      ${prizeRowHtml}
+      ${winnersHtml}
+    </div>`;
+  }).join('');
+
+  renderPrizeSummary();
+}
+
+function formatPrizeLine(p) {
+  const parts = [];
+  if (p.rank1 > 0) parts.push(`ที่ 1 = ${p.rank1.toLocaleString()}`);
+  if (p.rank2 > 0) parts.push(`ที่ 2 = ${p.rank2.toLocaleString()}`);
+  if (p.rank3 > 0) parts.push(`ที่ 3 = ${p.rank3.toLocaleString()}`);
+  return parts.join(' / ') + ' บาท';
+}
+
+async function savePrizeAmounts(period) {
+  const r1 = Number(document.getElementById(`prize_${period}_1`)?.value || 0);
+  const r2 = Number(document.getElementById(`prize_${period}_2`)?.value || 0);
+  const r3 = Number(document.getElementById(`prize_${period}_3`)?.value || 0);
+  try {
+    const result = await apiPost({
+      action: 'savePrize',
+      period: period,
+      rank1: r1, rank2: r2, rank3: r3,
+      password: window._adminPw || ''
+    });
+    if (result.error) {
+      alert('รหัสผ่านไม่ถูกต้อง หรือบันทึกไม่สำเร็จ');
+      return;
+    }
+    const pr = prizes.find(x => x.period === period);
+    if (pr) { pr.rank1 = r1; pr.rank2 = r2; pr.rank3 = r3; }
+    alert('บันทึกจำนวนเงินรางวัลแล้ว');
+  } catch (e) {
+    alert('บันทึกไม่สำเร็จ');
+  }
+}
+
+async function announcePeriod(period) {
+  if (!confirm('ยืนยันประกาศผลช่วงนี้? ระบบจะคำนวณผู้ชนะจากผลจริงปัจจุบัน')) return;
+  try {
+    const result = await apiPost({
+      action: 'announcePeriod',
+      period: period,
+      password: window._adminPw || ''
+    });
+    if (result.error) {
+      alert('รหัสผ่านไม่ถูกต้อง หรือเกิดข้อผิดพลาด: ' + result.error);
+      return;
+    }
+    results[period] = result.winners;
+    const pr = prizes.find(x => x.period === period);
+    if (pr) pr.status = 'closed';
+    renderPrizesPanel();
+  } catch (e) {
+    alert('ประกาศผลไม่สำเร็จ');
+  }
+}
+
+async function reopenPeriod(period) {
+  if (!confirm('ยืนยันเปิดช่วงนี้ใหม่? ผลที่ประกาศไว้จะถูกลบ')) return;
+  try {
+    const result = await apiPost({
+      action: 'reopenPeriod',
+      period: period,
+      password: window._adminPw || ''
+    });
+    if (result.error) {
+      alert('รหัสผ่านไม่ถูกต้อง');
+      return;
+    }
+    delete results[period];
+    const pr = prizes.find(x => x.period === period);
+    if (pr) pr.status = 'open';
+    renderPrizesPanel();
+  } catch (e) {
+    alert('ดำเนินการไม่สำเร็จ');
+  }
+}
+
+function renderPrizeSummary() {
+  const tbody = document.getElementById('prizeSummaryBody');
+  const totals = {};
+  players.forEach(p => totals[p] = 0);
+
+  Object.values(results).forEach(winners => {
+    (winners || []).forEach(w => {
+      totals[w.name] = (totals[w.name] || 0) + w.prize;
+    });
+  });
+
+  const sorted = players.slice().sort((a,b) => (totals[b]||0) - (totals[a]||0));
+  if (sorted.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-dim);padding:24px;">ยังไม่มีข้อมูล</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = sorted.map((p, i) => {
+    const amount = totals[p] || 0;
+    const rankClass = i===0?'r1':i===1?'r2':i===2?'r3':'';
+    const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+    const isMe = p === currentUser ? ' style="background:var(--highlight);"' : '';
+    return `<tr${isMe}>
+      <td><span class="rank-num ${rankClass}">${medal||i+1}</span></td>
+      <td style="font-weight:600">${escapeHtml(p)}</td>
+      <td><span class="total-pts" style="color:var(--gold)">${amount.toLocaleString()}</span></td>
     </tr>`;
   }).join('');
 }
