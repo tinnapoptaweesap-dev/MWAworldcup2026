@@ -742,9 +742,9 @@ let currentStage = 'group';
 // Mirrors PERIOD_MATCHES in Apps Script — used for client-side period score calc
 const PERIOD_MATCHES = {
   r1: ['g1','g2','g3','g4','g5','g6','g7','g8','g9','g10','g11','g12','g13','g14','g15','g16','g17','g18','g19','g20','g21','g22','g23','g24'],
-  r2: ['g25','g26','g27','g28','g29','g30','g31','g32','g33','g34','g35','g36','g37','g38','g39','g40','g41','g42','g43','g44','g45','g46','g47','g48','g49','g50','g51','g52','g53','g54'],
-  r3: ['g55','g56','g57','g58','g59','g60','g61','g62','g63','g64','g65','g66','g67','g68','g69','g70','g71','g72','r32-1'],
-  r32: ['r32-2','r32-3','r32-4','r32-5','r32-6','r32-7','r32-8','r32-9','r32-10','r32-11','r32-12','r32-13','r32-14','r32-15','r32-16'],
+  r2: ['g25','g26','g27','g28','g29','g30','g31','g32','g33','g34','g35','g36','g37','g38','g39','g40','g41','g42','g43','g44','g45','g46','g47','g48'],
+  r3: ['g49','g50','g51','g52','g53','g54','g55','g56','g57','g58','g59','g60','g61','g62','g63','g64','g65','g66','g67','g68','g69','g70','g71','g72'],
+  r32: ['r32-1','r32-2','r32-3','r32-4','r32-5','r32-6','r32-7','r32-8','r32-9','r32-10','r32-11','r32-12','r32-13','r32-14','r32-15','r32-16'],
   knockout: ['r16-1','r16-2','r16-3','r16-4','r16-5','r16-6','r16-7','r16-8','qf1','qf2','qf3','qf4','sf1','sf2'],
   third: ['3rd'],
   final: ['final']
@@ -983,7 +983,7 @@ function renderMatch(m) {
   const key = m.id + '|' + currentUser;
   const ph = preds[key]?.h ?? '';
   const pa = preds[key]?.a ?? '';
-  const badge = calcBadge(ph, pa, actualH, actualA);
+  const badge = calcBadge(ph, pa, actualH, actualA, m.id);
   const isLocked = !!locks[m.id];
 
   const lockBadge = isLocked ? `<span class="lock-badge" style="font-size:11px;color:var(--text-dim);margin-left:6px;">🔒 ล็อกแล้ว</span>` : '';
@@ -1058,7 +1058,7 @@ function onPredInput(matchId) {
 
   const ah = actuals[matchId]?.h ?? '';
   const aa = actuals[matchId]?.a ?? '';
-  const badge = calcBadge(h, a, ah, aa);
+  const badge = calcBadge(h, a, ah, aa, matchId);
   const el = document.getElementById(`badge_${matchId}`);
   if (el) {
     el.textContent = badge.label;
@@ -1162,13 +1162,17 @@ async function toggleLock(matchId) {
 }
 
 // ── SCORING ───────────────────────────────────────────────────────────────
+// Matches using OLD scoring system (group stage round 1 only)
+const R1_MATCHES = new Set(['g1','g2','g3','g4','g5','g6','g7','g8','g9','g10','g11','g12','g13','g14','g15','g16','g17','g18','g19','g20','g21','g22','g23','g24']);
+
 function getResult(h, a) {
   const hi = parseInt(h), ai = parseInt(a);
   if (isNaN(hi) || isNaN(ai)) return null;
   return hi > ai ? 'H' : ai > hi ? 'A' : 'D';
 }
 
-function calcPoints(ph, pa, ah, aa) {
+// Old system: correct result+score = 3, correct result = 1, wrong = 0
+function calcPointsOld(ph, pa, ah, aa) {
   if (ph==='' || pa==='' || ah==='' || aa==='' || ph==null || pa==null || ah==null || aa==null) return null;
   const pr = getResult(ph, pa), ar = getResult(ah, aa);
   if (!pr || !ar) return null;
@@ -1177,11 +1181,42 @@ function calcPoints(ph, pa, ah, aa) {
   return 1;
 }
 
-function calcBadge(ph, pa, ah, aa) {
-  const pts = calcPoints(ph, pa, ah, aa);
+// New system (r2 onwards): สูงสุด 5 คะแนน
+function calcPointsNew(ph, pa, ah, aa) {
+  if (ph==='' || pa==='' || ah==='' || aa==='' || ph==null || pa==null || ah==null || aa==null) return null;
+  const phi = parseInt(ph), pai = parseInt(pa), ahi = parseInt(ah), aai = parseInt(aa);
+  if (isNaN(phi)||isNaN(pai)||isNaN(ahi)||isNaN(aai)) return null;
+
+  const pr = getResult(ph, pa), ar = getResult(ah, aa);
+  if (!pr || !ar) return null;
+
+  let pts = 0;
+  const resultCorrect = (pr === ar);
+  if (resultCorrect) pts += 1;
+  if (resultCorrect && (phi - pai) === (ahi - aai)) pts += 1;
+
+  const homeCorrect = (phi === ahi);
+  const awayCorrect = (pai === aai);
+  if (homeCorrect && awayCorrect) {
+    pts += 3;
+  } else if (homeCorrect || awayCorrect) {
+    pts += 1;
+  }
+
+  return pts;
+}
+
+// Main router: old for g1-g24, new for everything else
+function calcPoints(ph, pa, ah, aa, matchId) {
+  if (R1_MATCHES.has(matchId)) return calcPointsOld(ph, pa, ah, aa);
+  return calcPointsNew(ph, pa, ah, aa);
+}
+
+function calcBadge(ph, pa, ah, aa, matchId) {
+  const pts = calcPoints(ph, pa, ah, aa, matchId);
   if (pts === null) return { label: '', cls: '' };
-  if (pts === 3) return { label: '+3 ⭐', cls: 'badge-3' };
-  if (pts === 1) return { label: '+1', cls: 'badge-1' };
+  if (pts >= 4) return { label: `+${pts} ⭐`, cls: 'badge-3' };
+  if (pts >= 1) return { label: `+${pts}`, cls: 'badge-1' };
   return { label: '0', cls: 'badge-0' };
 }
 
@@ -1224,7 +1259,7 @@ async function renderScoreboard() {
       const key = m.id + '|' + p;
       const ph = preds[key]?.h ?? '';
       const pa = preds[key]?.a ?? '';
-      const pts = calcPoints(ph, pa, ah, aa);
+      const pts = calcPoints(ph, pa, ah, aa, m.id);
       if (pts === null) return;
       stats[p].total += pts;
       if (pts===3) stats[p].three++;
@@ -1424,7 +1459,7 @@ function computePeriodTotals(period) {
     players.forEach(p => {
       const pred = preds[matchId + '|' + p];
       if (!pred) return;
-      const pts = calcPoints(pred.h, pred.a, act.h, act.a);
+      const pts = calcPoints(pred.h, pred.a, act.h, act.a, matchId);
       if (pts === null) return;
       totals[p] = (totals[p] || 0) + pts;
     });
