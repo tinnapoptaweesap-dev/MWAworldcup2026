@@ -571,14 +571,28 @@
 <!-- SCOREBOARD -->
 <div class="scoreboard-section" id="scoreboard-panel" style="display:none; padding-bottom:40px;">
   <div class="section-title">🏆 ตารางคะแนนรวม</div>
+  <div style="margin-bottom:16px;">
+    <label style="font-size:13px; color:var(--text-dim); display:block; margin-bottom:6px;">เลือกช่วงเวลา:</label>
+    <select id="scoreboardPeriod" onchange="renderScoreboard()"
+      style="width:100%; max-width:320px; padding:10px 12px; border-radius:8px; background:var(--dark2); color:var(--text); border:1px solid var(--border); font-size:14px;">
+      <option value="all">รวมทั้งหมด (ทุกแมตช์)</option>
+      <option value="r1">รอบแบ่งกลุ่ม นัดที่ 1 (g1–g24)</option>
+      <option value="r2">รอบแบ่งกลุ่ม นัดที่ 2 (g25–g48)</option>
+      <option value="r3">รอบแบ่งกลุ่ม นัดที่ 3 (g49–g72)</option>
+      <option value="r32">รอบ 32 ทีม (16 นัด)</option>
+      <option value="knockout">รอบ 16/8/4 ทีม (14 นัด)</option>
+      <option value="third">ชิงอันดับ 3</option>
+      <option value="final">ชิงชนะเลิศ</option>
+    </select>
+  </div>
   <table class="scoreboard-table">
     <thead>
       <tr>
         <th>#</th>
         <th>ผู้ทาย</th>
-        <th>คะแนนรวม</th>
-        <th>3 แต้ม</th>
-        <th>1 แต้ม</th>
+        <th>คะแนน</th>
+        <th>≥3 แต้ม</th>
+        <th>≥1 แต้ม</th>
       </tr>
     </thead>
     <tbody id="scoreboardBody"></tbody>
@@ -1247,11 +1261,18 @@ async function renderScoreboard() {
     return;
   }
 
+  const selectedPeriod = document.getElementById('scoreboardPeriod')?.value || 'all';
+  let matchFilter = null; // null = all matches
+  if (selectedPeriod !== 'all') {
+    matchFilter = new Set(PERIOD_MATCHES[selectedPeriod] || []);
+  }
+
   const allMatches = Object.values(MATCHES).flat();
   const stats = {};
   players.forEach(p => { stats[p] = { total:0, three:0, one:0 }; });
 
   allMatches.forEach(m => {
+    if (matchFilter && !matchFilter.has(m.id)) return;
     const ah = actuals[m.id]?.h ?? '';
     const aa = actuals[m.id]?.a ?? '';
     if (ah==='' || aa==='') return;
@@ -1262,8 +1283,8 @@ async function renderScoreboard() {
       const pts = calcPoints(ph, pa, ah, aa, m.id);
       if (pts === null) return;
       stats[p].total += pts;
-      if (pts===3) stats[p].three++;
-      else if (pts===1) stats[p].one++;
+      if (pts >= 3) stats[p].three++;
+      else if (pts >= 1) stats[p].one++;
     });
   });
 
