@@ -530,14 +530,14 @@
   <div style="font-size:11px; color:var(--text-dim); padding:0 2px 4px;">← เลื่อนซ้าย-ขวาเพื่อดูแท็บทั้งหมด →</div>
   <div class="tabs" id="stageTabs">
     <div class="tab active" onclick="switchTab('group','รอบแบ่งกลุ่ม',this)">รอบแบ่งกลุ่ม</div>
-    <div class="tab" onclick="switchTab('scoreboard','คะแนนรวม',this)">🏆 คะแนนรวม</div>
-    <div class="tab" onclick="switchTab('prizes','เงินรางวัล',this)">🎁 เงินรางวัล</div>
-    <div class="tab" onclick="switchTab('special','👑 ทายแชมป์/ดาวซัลโว',this)">👑 ทายแชมป์/ดาวซัลโว</div>
     <div class="tab" onclick="switchTab('r32','รอบ 32 ทีม',this)">รอบ 32 ทีม</div>
     <div class="tab" onclick="switchTab('r16','รอบ 16 ทีม',this)">รอบ 16 ทีม</div>
     <div class="tab" onclick="switchTab('qf','รอบก่อนรองฯ',this)">รอบก่อนรองฯ</div>
     <div class="tab" onclick="switchTab('sf','รอบรองชนะเลิศ',this)">รอบรองฯ</div>
     <div class="tab" onclick="switchTab('final','รอบชิงชนะเลิศ',this)">รอบชิง</div>
+    <div class="tab" onclick="switchTab('special','👑 ทายแชมป์/ดาวซัลโว',this)">👑 ทายแชมป์/ดาวซัลโว</div>
+    <div class="tab" onclick="switchTab('scoreboard','คะแนนรวม',this)">🏆 คะแนนรวม</div>
+    <div class="tab" onclick="switchTab('prizes','เงินรางวัล',this)">🎁 เงินรางวัล</div>
   </div>
 </div>
 
@@ -562,6 +562,7 @@
   <div id="prizesArea"></div>
 
   <div class="section-title" style="margin-top:28px;">💰 เงินรางวัลสะสมของแต่ละคน</div>
+  <div style="font-size:12px; color:var(--text-dim); margin-bottom:10px;">รวมเงินที่ประกาศแล้ว + ผู้นำชั่วคราวของช่วงที่กำลังแข่ง (ยังไม่ประกาศ)</div>
   <table class="scoreboard-table">
     <thead>
       <tr>
@@ -609,7 +610,7 @@
 <div id="loadingMsg" style="text-align:center; padding:30px; color:var(--text-dim); font-size:13px;">กำลังโหลดข้อมูล...</div>
 
 <div style="text-align:center; padding:20px; color:var(--text-dim); font-size:11px;">
-  เวอร์ชัน 2.2 ·
+  เวอร์ชัน 2.3 ·
   <a href="javascript:location.reload(true)" style="color:var(--gold); text-decoration:underline;">โหลดข้อมูลใหม่</a>
 </div>
 <script>
@@ -1508,6 +1509,43 @@ function computePeriodTotals(period) {
   return totals;
 }
 
+// Client-side mirror of Apps Script rankAndAssignPrizes (for provisional display)
+function rankAndAssignPrizesClient(totals, prizeRow) {
+  const playerList = Object.keys(totals);
+  if (playerList.length === 0) return [];
+  const distinctScores = [...new Set(playerList.map(p => totals[p]))].sort((a,b) => b-a);
+  const rankPrizes = [prizeRow.rank1, prizeRow.rank2, prizeRow.rank3];
+  const winners = [];
+  let rankIdx = 0;
+  for (let i = 0; i < distinctScores.length && rankIdx < 3; i++) {
+    const score = distinctScores[i];
+    if (score <= 0) break;
+    const tied = playerList.filter(p => totals[p] === score);
+    let pool = 0;
+    for (let s = 0; s < tied.length && (rankIdx + s) < 3; s++) pool += rankPrizes[rankIdx + s];
+    if (pool > 0) {
+      const each = Math.floor(pool / tied.length);
+      tied.forEach(name => winners.push({ name, points: score, prize: each, rank: rankIdx + 1 }));
+    }
+    rankIdx += tied.length;
+  }
+  return winners;
+}
+
+// Compute provisional winners for a match-based period (not announced yet)
+function computeProvisionalWinners(period, prizeRow) {
+  if (!PERIOD_MATCHES[period]) return [];
+  const totals = computePeriodTotals(period);
+  // only count players who actually have at least one scored match in this period
+  return rankAndAssignPrizesClient(totals, prizeRow);
+}
+
+// Does this period have any actual results entered yet?
+function periodHasResults(period) {
+  const ids = PERIOD_MATCHES[period] || [];
+  return ids.some(id => actuals[id] && actuals[id].h !== '' && actuals[id].a !== '');
+}
+
 function renderPrizesPanel() {
   const area = document.getElementById('prizesArea');
   if (!prizes || prizes.length === 0) {
@@ -1569,13 +1607,26 @@ function renderPrizesPanel() {
       } else {
         winnersHtml = `<div style="margin-top:10px; font-size:13px; color:var(--text-dim);">ไม่มีผู้ได้รับรางวัลในช่วงนี้</div>`;
       }
+    } else if (PERIOD_MATCHES[p.period] && periodHasResults(p.period)) {
+      // show provisional leaders (live, not yet announced)
+      const prov = computeProvisionalWinners(p.period, p);
+      if (prov.length > 0) {
+        winnersHtml = `<div style="margin-top:10px; padding:10px; background:rgba(124,252,140,0.06); border-radius:8px; border:1px dashed rgba(124,252,140,0.3);">
+          <div style="font-size:12px; color:var(--green-light); margin-bottom:6px;">📊 ผู้นำชั่วคราว (ยังไม่ประกาศ — อัปเดตตามผลที่กรอก):</div>
+          ${prov.map(w => `<div style="font-size:13px;">
+            ${w.rank === 1 ? '🥇' : w.rank === 2 ? '🥈' : '🥉'} ${escapeHtml(w.name)}
+            — ${w.points} คะแนน — <strong style="color:var(--green-light)">${w.prize.toLocaleString()} บาท</strong>
+          </div>`).join('')}
+        </div>`;
+      }
     }
 
+    const hasProvisional = !isClosed && PERIOD_MATCHES[p.period] && periodHasResults(p.period);
     return `<div class="match-card" style="margin-bottom:12px;">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
         <div style="font-weight:700;">${periodLabels[p.period] || p.label}</div>
-        <div style="font-size:12px; color:${isClosed ? 'var(--green-light)' : 'var(--text-dim)'};">
-          ${isClosed ? '✅ ประกาศผลแล้ว' : '⏳ ยังไม่ประกาศผล'}
+        <div style="font-size:12px; color:${isClosed ? 'var(--green-light)' : (hasProvisional ? 'var(--gold)' : 'var(--text-dim)')};">
+          ${isClosed ? '✅ ประกาศผลแล้ว' : (hasProvisional ? '📊 กำลังแข่ง (ชั่วคราว)' : '⏳ ยังไม่เริ่ม')}
         </div>
       </div>
       ${prizeRowHtml}
@@ -1661,29 +1712,50 @@ async function reopenPeriod(period) {
 
 function renderPrizeSummary() {
   const tbody = document.getElementById('prizeSummaryBody');
-  const totals = {};
-  players.forEach(p => totals[p] = 0);
+  const confirmed = {};   // announced prize money
+  const provisional = {}; // live, not yet announced
+  players.forEach(p => { confirmed[p] = 0; provisional[p] = 0; });
 
+  // confirmed (announced)
   Object.values(results).forEach(winners => {
     (winners || []).forEach(w => {
-      totals[w.name] = (totals[w.name] || 0) + w.prize;
+      confirmed[w.name] = (confirmed[w.name] || 0) + w.prize;
     });
   });
 
-  const sorted = players.slice().sort((a,b) => (totals[b]||0) - (totals[a]||0));
+  // provisional (periods with results but not yet announced)
+  prizes.forEach(pr => {
+    if (pr.status === 'closed') return;
+    if (!PERIOD_MATCHES[pr.period]) return;
+    if (!periodHasResults(pr.period)) return;
+    const prov = computeProvisionalWinners(pr.period, pr);
+    prov.forEach(w => {
+      provisional[w.name] = (provisional[w.name] || 0) + w.prize;
+    });
+  });
+
+  const grand = {};
+  players.forEach(p => grand[p] = (confirmed[p]||0) + (provisional[p]||0));
+
+  const sorted = players.slice().sort((a,b) => (grand[b]||0) - (grand[a]||0));
   if (sorted.length === 0) {
     tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-dim);padding:24px;">ยังไม่มีข้อมูล</td></tr>`;
     return;
   }
   tbody.innerHTML = sorted.map((p, i) => {
-    const amount = totals[p] || 0;
+    const conf = confirmed[p] || 0;
+    const prov = provisional[p] || 0;
+    const total = conf + prov;
     const rankClass = i===0?'r1':i===1?'r2':i===2?'r3':'';
     const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
     const isMe = p === currentUser ? ' style="background:var(--highlight);"' : '';
+    const provLabel = prov > 0
+      ? `<div style="font-size:10px; color:var(--green-light);">(รวมชั่วคราว ${prov.toLocaleString()})</div>`
+      : '';
     return `<tr${isMe}>
       <td><span class="rank-num ${rankClass}">${medal||i+1}</span></td>
       <td style="font-weight:600">${escapeHtml(p)}</td>
-      <td><span class="total-pts" style="color:var(--gold)">${amount.toLocaleString()}</span></td>
+      <td><span class="total-pts" style="color:var(--gold)">${total.toLocaleString()}</span>${provLabel}</td>
     </tr>`;
   }).join('');
 }
