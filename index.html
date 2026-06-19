@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>ตารางทายผล FIFA World Cup 2026 (ออนไลน์)</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700;800&family=Bebas+Neue&display=swap');
@@ -196,15 +199,18 @@
     max-width: 900px;
     margin: 28px auto 0;
     padding: 0 16px;
+    position: relative;
   }
   .tabs {
     display: flex;
     gap: 4px;
     overflow-x: auto;
     padding-bottom: 2px;
-    scrollbar-width: none;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
   }
-  .tabs::-webkit-scrollbar { display: none; }
+  .tabs::-webkit-scrollbar { height: 4px; }
+  .tabs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
   .tab {
     padding: 8px 16px;
     border-radius: 6px 6px 0 0;
@@ -521,16 +527,17 @@
 
 <!-- STAGE TABS -->
 <div class="tabs-wrap" id="stageTabsWrap" style="display:none;">
+  <div style="font-size:11px; color:var(--text-dim); padding:0 2px 4px;">← เลื่อนซ้าย-ขวาเพื่อดูแท็บทั้งหมด →</div>
   <div class="tabs" id="stageTabs">
     <div class="tab active" onclick="switchTab('group','รอบแบ่งกลุ่ม',this)">รอบแบ่งกลุ่ม</div>
+    <div class="tab" onclick="switchTab('scoreboard','คะแนนรวม',this)">🏆 คะแนนรวม</div>
+    <div class="tab" onclick="switchTab('prizes','เงินรางวัล',this)">🎁 เงินรางวัล</div>
+    <div class="tab" onclick="switchTab('special','👑 ทายแชมป์/ดาวซัลโว',this)">👑 ทายแชมป์/ดาวซัลโว</div>
     <div class="tab" onclick="switchTab('r32','รอบ 32 ทีม',this)">รอบ 32 ทีม</div>
     <div class="tab" onclick="switchTab('r16','รอบ 16 ทีม',this)">รอบ 16 ทีม</div>
     <div class="tab" onclick="switchTab('qf','รอบก่อนรองฯ',this)">รอบก่อนรองฯ</div>
     <div class="tab" onclick="switchTab('sf','รอบรองชนะเลิศ',this)">รอบรองฯ</div>
     <div class="tab" onclick="switchTab('final','รอบชิงชนะเลิศ',this)">รอบชิง</div>
-    <div class="tab" onclick="switchTab('special','👑 ทายแชมป์/ดาวซัลโว',this)">👑 ทายแชมป์/ดาวซัลโว</div>
-    <div class="tab" onclick="switchTab('scoreboard','คะแนนรวม',this)">🏆 คะแนนรวม</div>
-    <div class="tab" onclick="switchTab('prizes','เงินรางวัล',this)">🎁 เงินรางวัล</div>
   </div>
 </div>
 
@@ -600,6 +607,11 @@
 </div>
 
 <div id="loadingMsg" style="text-align:center; padding:30px; color:var(--text-dim); font-size:13px;">กำลังโหลดข้อมูล...</div>
+
+<div style="text-align:center; padding:20px; color:var(--text-dim); font-size:11px;">
+  เวอร์ชัน 2.2 ·
+  <a href="javascript:location.reload(true)" style="color:var(--gold); text-decoration:underline;">โหลดข้อมูลใหม่</a>
+</div>
 <script>
 const MATCHES = {
   group: [
@@ -766,7 +778,7 @@ const PERIOD_MATCHES = {
 
 // ── API HELPERS ───────────────────────────────────────────────────────────
 async function apiGet(action) {
-  const res = await fetch(`${API_URL}?action=${action}`);
+  const res = await fetch(`${API_URL}?action=${action}&_t=${Date.now()}`);
   return res.json();
 }
 
@@ -904,7 +916,7 @@ function switchUser() {
 function toggleAdmin() {
   if (isAdmin) {
     isAdmin = false;
-    renderAllStages();
+    refreshCurrentView();
     return;
   }
   const pw = prompt('รหัสผ่านสำหรับกรอกผลจริง:');
@@ -912,7 +924,14 @@ function toggleAdmin() {
   // password is verified server-side on save; just enable the input UI here
   isAdmin = true;
   window._adminPw = pw;
+  refreshCurrentView();
+}
+
+// Re-render whichever panel is currently visible (matches / special / prizes)
+function refreshCurrentView() {
   renderAllStages();
+  if (currentStage === 'special') renderSpecialPanel();
+  else if (currentStage === 'prizes') renderPrizesPanel();
 }
 
 function enterApp() {
