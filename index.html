@@ -800,7 +800,7 @@ async function loadAll() {
     players = [];
     const seen = new Set();
     (predRows || []).forEach(r => {
-      preds[r.matchId + '|' + r.name] = { h: String(r.homeScore), a: String(r.awayScore) };
+      preds[r.matchId + '|' + r.name] = { h: String(r.homeScore), a: String(r.awayScore), etH: (r.etHome ?? '')==='' ? '' : String(r.etHome), etA: (r.etAway ?? '')==='' ? '' : String(r.etAway), penH: (r.penHome ?? '')==='' ? '' : String(r.penHome), penA: (r.penAway ?? '')==='' ? '' : String(r.penAway) };
       if (!seen.has(r.name)) { seen.add(r.name); players.push(r.name); }
     });
   } catch (e) {
@@ -1074,7 +1074,7 @@ function renderMatch(m) {
   const key = m.id + '|' + currentUser;
   const ph = preds[key]?.h ?? '';
   const pa = preds[key]?.a ?? '';
-  const badge = calcBadge(ph, pa, actualH, actualA, m.id);
+  const badge = calcBadge(ph, pa, actualH, actualA, m.id, { h: ph, a: pa, etH: preds[key]?.etH, etA: preds[key]?.etA, penH: preds[key]?.penH, penA: preds[key]?.penA }, actuals[m.id]);
   const isLocked = !!locks[m.id];
 
   const lockBadge = isLocked ? `<span class="lock-badge" style="font-size:11px;color:var(--text-dim);margin-left:6px;">🔒 ล็อกแล้ว</span>` : '';
@@ -1098,6 +1098,7 @@ function renderMatch(m) {
         <span class="save-status" id="save_${m.id}" style="font-size:11px;color:var(--text-dim);margin-left:6px;"></span>
         ${lockBadge}
       </div>
+      ${isKnockoutMatch(m.id) ? `<div id="koPred_${m.id}" style="margin-top:8px;">${renderKnockoutPredInputs(m.id, isLocked)}</div>` : ''}
     </div>
   </div>`;
 
@@ -1164,16 +1165,65 @@ function renderMatch(m) {
 }
 
 // ── PREDICTIONS ───────────────────────────────────────────────────────────
+// แสดงช่องทาย ET/PEN แบบ dynamic (โผล่เมื่อทายเสมอ)
+function renderKnockoutPredInputs(matchId, isLocked) {
+  const key = matchId + '|' + currentUser;
+  const p = preds[key] || {};
+  const ph = p.h ?? '', pa = p.a ?? '';
+  const etH = p.etH ?? '', etA = p.etA ?? '';
+  const penH = p.penH ?? '', penA = p.penA ?? '';
+  const dis = isLocked ? 'disabled style="background:#2a2a2a;color:#888;cursor:not-allowed;"' : '';
+  let html = '';
+
+  // ทายเสมอใน 90 นาที -> โผล่ช่องต่อเวลา
+  const tied90 = (ph !== '' && pa !== '' && parseInt(ph) === parseInt(pa));
+  if (tied90) {
+    html += `<div class="pred-inputs" style="margin-top:4px;align-items:center;">
+      <span style="font-size:12px;color:#FFD166;min-width:96px;">⏱️ ทายต่อเวลา (รวม):</span>
+      <input class="score-input" type="number" min="0" max="99" id="peth_${matchId}" value="${etH}" oninput="onPredInput('${matchId}')" ${dis} placeholder="–" style="width:46px;" />
+      <span class="score-sep">:</span>
+      <input class="score-input" type="number" min="0" max="99" id="peta_${matchId}" value="${etA}" oninput="onPredInput('${matchId}')" ${dis} placeholder="–" style="width:46px;" />
+    </div>`;
+
+    // ทายเสมอในต่อเวลาด้วย -> โผล่ช่องจุดโทษ
+    const tiedET = (etH !== '' && etA !== '' && parseInt(etH) === parseInt(etA));
+    if (tiedET) {
+      html += `<div class="pred-inputs" style="margin-top:4px;align-items:center;">
+        <span style="font-size:12px;color:#22B8FF;min-width:96px;">🥅 ทายจุดโทษ:</span>
+        <input class="score-input" type="number" min="0" max="99" id="ppenh_${matchId}" value="${penH}" oninput="onPredInput('${matchId}')" ${dis} placeholder="–" style="width:46px;" />
+        <span class="score-sep">:</span>
+        <input class="score-input" type="number" min="0" max="99" id="ppena_${matchId}" value="${penA}" oninput="onPredInput('${matchId}')" ${dis} placeholder="–" style="width:46px;" />
+      </div>`;
+    }
+  }
+  return html;
+}
+
 let savePredTimers = {};
 function onPredInput(matchId) {
   if (locks[matchId]) return;
   const h = document.getElementById(`ph_${matchId}`)?.value;
   const a = document.getElementById(`pa_${matchId}`)?.value;
-  preds[matchId + '|' + currentUser] = { h, a };
+  const etH = document.getElementById(`peth_${matchId}`)?.value ?? '';
+  const etA = document.getElementById(`peta_${matchId}`)?.value ?? '';
+  const penH = document.getElementById(`ppenh_${matchId}`)?.value ?? '';
+  const penA = document.getElementById(`ppena_${matchId}`)?.value ?? '';
+  preds[matchId + '|' + currentUser] = { h, a, etH, etA, penH, penA };
+
+  // ถ้าเป็น knockout ให้ re-render ช่อง ET/PEN (โผล่/หาย ตามการทายเสมอ)
+  if (isKnockoutMatch(matchId)) {
+    const koEl = document.getElementById(`koPred_${matchId}`);
+    if (koEl) {
+      const activeId = document.activeElement?.id;
+      koEl.innerHTML = renderKnockoutPredInputs(matchId, !!locks[matchId]);
+      // คืน focus ถ้าช่องเดิมยังอยู่
+      if (activeId) { const re = document.getElementById(activeId); if (re) { re.focus(); } }
+    }
+  }
 
   const ah = actuals[matchId]?.h ?? '';
   const aa = actuals[matchId]?.a ?? '';
-  const badge = calcBadge(h, a, ah, aa, matchId);
+  const badge = calcBadge(h, a, ah, aa, matchId, preds[matchId + '|' + currentUser], actuals[matchId]);
   const el = document.getElementById(`badge_${matchId}`);
   if (el) {
     el.textContent = badge.label;
@@ -1184,10 +1234,10 @@ function onPredInput(matchId) {
   if (statusEl) statusEl.textContent = 'กำลังบันทึก...';
 
   clearTimeout(savePredTimers[matchId]);
-  savePredTimers[matchId] = setTimeout(() => savePrediction(matchId, h, a), 600);
+  savePredTimers[matchId] = setTimeout(() => savePrediction(matchId, h, a, etH, etA, penH, penA), 600);
 }
 
-async function savePrediction(matchId, h, a) {
+async function savePrediction(matchId, h, a, etH, etA, penH, penA) {
   const statusEl = document.getElementById(`save_${matchId}`);
   if (h === '' || a === '') {
     if (statusEl) statusEl.textContent = '';
@@ -1199,7 +1249,11 @@ async function savePrediction(matchId, h, a) {
       name: currentUser,
       matchId: matchId,
       homeScore: parseInt(h),
-      awayScore: parseInt(a)
+      awayScore: parseInt(a),
+      etHome: (etH===''||etH==null)?'':parseInt(etH),
+      etAway: (etA===''||etA==null)?'':parseInt(etA),
+      penHome: (penH===''||penH==null)?'':parseInt(penH),
+      penAway: (penA===''||penA==null)?'':parseInt(penA)
     });
     if (result.error) {
       if (statusEl) {
@@ -1339,17 +1393,90 @@ function calcPointsNew(ph, pa, ah, aa) {
   return pts;
 }
 
+// ── KNOCKOUT SCORING (รองรับต่อเวลา + จุดโทษ) ──────────────────────────
+// pred = {h,a, etH,etA, penH,penA} (คำทาย), act = actuals[matchId]
+// คืน null ถ้าข้อมูล 90น.ไม่ครบ
+function calcPointsKnockout(pred, act) {
+  if (!pred || !act) return null;
+  const ph = parseInt(pred.h), pa = parseInt(pred.a);
+  const ah = parseInt(act.h), aa = parseInt(act.a);
+  if (isNaN(ph)||isNaN(pa)||isNaN(ah)||isNaN(aa)) return null;
+
+  // กรณี A: 90 นาทีมีผลแพ้ชนะ -> กฎเดิม (สูงสุด 5)
+  if (ah !== aa) return calcPointsNew(pred.h, pred.a, act.h, act.a);
+
+  // กรณี B: 90 นาทีเสมอจริง
+  // ทาย 90น. ไม่เสมอ -> 0 ทุกกรณี
+  if (ph !== pa) return 0;
+
+  let pts = 0;
+  // ช่วง 90 นาที (ทายเสมอถูกแล้ว)
+  pts += 1; // 3.1 ทายเสมอถูก
+  pts += 1; // 3.2 ผลต่างถูก (อัตโนมัติ)
+  const hc90 = (ph===ah), ac90 = (pa===aa);
+  if (hc90 && ac90) pts += 3;        // 3.4 สกอร์ 90น ถูก 2 ฝั่ง
+  else if (hc90 || ac90) pts += 1;   // 3.3 สกอร์ 90น ถูก 1 ฝั่ง
+
+  // ── ช่วงต่อเวลา ──
+  const ahet = (act.etH===''||act.etH==null) ? null : parseInt(act.etH);
+  const aaet = (act.etA===''||act.etA==null) ? null : parseInt(act.etA);
+  // ถ้ายังไม่มีผลต่อเวลา คืนคะแนนแค่ช่วง 90น.
+  if (ahet==null || aaet==null || isNaN(ahet) || isNaN(aaet)) return pts;
+
+  const phet = (pred.etH===''||pred.etH==null) ? null : parseInt(pred.etH);
+  const paet = (pred.etA===''||pred.etA==null) ? null : parseInt(pred.etA);
+
+  if (ahet !== aaet) {
+    // ต่อเวลามีผลแพ้ชนะ
+    if (phet==null || paet==null || isNaN(phet) || isNaN(paet)) return pts;
+    const per = getResult(String(phet),String(paet)), aer = getResult(String(ahet),String(aaet));
+    if (per === aer) {              // 3.5 ทายผู้ชนะต่อเวลาถูกฝั่ง
+      pts += 1;
+      const hcet = (phet===ahet), acet = (paet===aaet);
+      if (hcet && acet) {
+        pts += 2;                   // 3.8 สกอร์รวมต่อเวลาถูก 2 ฝั่ง
+      } else {
+        if ((phet-paet)===(ahet-aaet)) pts += 0.5; // 3.6 ผลต่างต่อเวลาถูก
+        if (hcet || acet) pts += 0.5;              // 3.7 สกอร์ต่อเวลาถูก 1 ฝั่ง
+      }
+    }
+    return pts;
+  } else {
+    // ต่อเวลาเสมอ -> จุดโทษ
+    if (phet!=null && paet!=null && phet===paet) {
+      pts += 1; // 3.9.1 ทายต่อเวลาเสมอถูก
+      const ahpen = (act.penH===''||act.penH==null) ? null : parseInt(act.penH);
+      const aapen = (act.penA===''||act.penA==null) ? null : parseInt(act.penA);
+      const phpen = (pred.penH===''||pred.penH==null) ? null : parseInt(pred.penH);
+      const papen = (pred.penA===''||pred.penA==null) ? null : parseInt(pred.penA);
+      if (ahpen!=null && aapen!=null && phpen!=null && papen!=null &&
+          !isNaN(ahpen) && !isNaN(aapen) && !isNaN(phpen) && !isNaN(papen)) {
+        const ppr = getResult(String(phpen),String(papen)), apr = getResult(String(ahpen),String(aapen));
+        if (ppr === apr) {
+          pts += 2; // 3.9.2 ทายผู้ชนะจุดโทษถูก
+          if (phpen===ahpen && papen===aapen) pts += 5; // 3.9.3 สกอร์จุดโทษถูก 2 ฝั่ง
+        }
+      }
+    }
+    return pts;
+  }
+}
+
 // Main router: old for g1-g24, new for everything else
-function calcPoints(ph, pa, ah, aa, matchId) {
+function calcPoints(ph, pa, ah, aa, matchId, predObj, actObj) {
   if (R1_MATCHES.has(matchId)) return calcPointsOld(ph, pa, ah, aa);
+  // knockout: ใช้กติกาเต็ม (ต่อเวลา/จุดโทษ) ถ้ามี object ครบ
+  if (isKnockoutMatch(matchId) && predObj && actObj) {
+    return calcPointsKnockout(predObj, actObj);
+  }
   return calcPointsNew(ph, pa, ah, aa);
 }
 
-function calcBadge(ph, pa, ah, aa, matchId) {
-  const pts = calcPoints(ph, pa, ah, aa, matchId);
+function calcBadge(ph, pa, ah, aa, matchId, predObj, actObj) {
+  const pts = calcPoints(ph, pa, ah, aa, matchId, predObj, actObj);
   if (pts === null) return { label: '', cls: '' };
   if (pts >= 4) return { label: `+${pts} ⭐`, cls: 'badge-3' };
-  if (pts >= 1) return { label: `+${pts}`, cls: 'badge-1' };
+  if (pts > 0) return { label: `+${pts}`, cls: 'badge-1' };
   return { label: '0', cls: 'badge-0' };
 }
 
@@ -1365,7 +1492,7 @@ async function renderScoreboard() {
     players = [];
     const seen = new Set();
     (predRows || []).forEach(r => {
-      preds[r.matchId + '|' + r.name] = { h: String(r.homeScore), a: String(r.awayScore) };
+      preds[r.matchId + '|' + r.name] = { h: String(r.homeScore), a: String(r.awayScore), etH: (r.etHome ?? '')==='' ? '' : String(r.etHome), etA: (r.etAway ?? '')==='' ? '' : String(r.etAway), penH: (r.penHome ?? '')==='' ? '' : String(r.penHome), penA: (r.penAway ?? '')==='' ? '' : String(r.penAway) };
       if (!seen.has(r.name)) { seen.add(r.name); players.push(r.name); }
     });
     if (currentUser && !players.includes(currentUser)) players.push(currentUser);
@@ -1399,7 +1526,7 @@ async function renderScoreboard() {
       const key = m.id + '|' + p;
       const ph = preds[key]?.h ?? '';
       const pa = preds[key]?.a ?? '';
-      const pts = calcPoints(ph, pa, ah, aa, m.id);
+      const pts = calcPoints(ph, pa, ah, aa, m.id, preds[key], actuals[m.id]);
       if (pts === null) return;
       stats[p].total += pts;
       if (pts >= 3) stats[p].three++;
@@ -1599,7 +1726,7 @@ function computePeriodTotals(period) {
     players.forEach(p => {
       const pred = preds[matchId + '|' + p];
       if (!pred) return;
-      const pts = calcPoints(pred.h, pred.a, act.h, act.a, matchId);
+      const pts = calcPoints(pred.h, pred.a, act.h, act.a, matchId, pred, act);
       if (pts === null) return;
       totals[p] = (totals[p] || 0) + pts;
     });
