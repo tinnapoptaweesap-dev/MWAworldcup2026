@@ -1406,8 +1406,16 @@ function calcPointsKnockout(pred, act) {
   if (ah !== aa) return calcPointsNew(pred.h, pred.a, act.h, act.a);
 
   // กรณี B: 90 นาทีเสมอจริง
-  // ทาย 90น. ไม่เสมอ -> 0 ทุกกรณี
-  if (ph !== pa) return 0;
+  // ทาย 90น. ไม่เสมอ -> เช็คทีมเข้ารอบ (กติกาใหม่)
+  if (ph !== pa) {
+    // ถ้าทายทีมที่เข้ารอบถูก (ชนะต่อเวลา/จุดโทษ) ได้ +2
+    const winner = act.winner || '';
+    if (winner === 'H' || winner === 'A') {
+      const predWin = (ph > pa) ? 'H' : 'A';
+      if (predWin === winner) return 2;
+    }
+    return 0;
+  }
 
   let pts = 0;
   // ช่วง 90 นาที (ทายเสมอถูกแล้ว)
