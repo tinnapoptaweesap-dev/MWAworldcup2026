@@ -800,7 +800,7 @@ async function loadAll() {
     players = [];
     const seen = new Set();
     (predRows || []).forEach(r => {
-      preds[r.matchId + '|' + r.name] = { h: String(r.homeScore), a: String(r.awayScore), etH: (r.etHome ?? '')==='' ? '' : String(r.etHome), etA: (r.etAway ?? '')==='' ? '' : String(r.etAway), penH: (r.penHome ?? '')==='' ? '' : String(r.penHome), penA: (r.penAway ?? '')==='' ? '' : String(r.penAway) };
+      preds[r.matchId + '|' + r.name] = { h: String(r.homeScore), a: String(r.awayScore), etH: (r.etHome ?? '')==='' ? '' : String(r.etHome), etA: (r.etAway ?? '')==='' ? '' : String(r.etAway), penH: (r.penHome ?? '')==='' ? '' : String(r.penHome), penA: (r.penAway ?? '')==='' ? '' : String(r.penAway), gMin: (r.guessMinute ?? '')==='' ? '' : String(r.guessMinute), gStop: (r.guessStoppage ?? '')==='' ? '' : String(r.guessStoppage) };
       if (!seen.has(r.name)) { seen.add(r.name); players.push(r.name); }
     });
   } catch (e) {
@@ -811,7 +811,7 @@ async function loadAll() {
     const actualRows = await apiGet('getActuals');
     actuals = {};
     (actualRows || []).forEach(r => {
-      actuals[r.matchId] = { h: String(r.homeScore), a: String(r.awayScore), winner: r.winner || '', etH: (r.etHome ?? '') === '' ? '' : String(r.etHome), etA: (r.etAway ?? '') === '' ? '' : String(r.etAway), penH: (r.penHome ?? '') === '' ? '' : String(r.penHome), penA: (r.penAway ?? '') === '' ? '' : String(r.penAway) };
+      actuals[r.matchId] = { h: String(r.homeScore), a: String(r.awayScore), winner: r.winner || '', etH: (r.etHome ?? '') === '' ? '' : String(r.etHome), etA: (r.etAway ?? '') === '' ? '' : String(r.etAway), penH: (r.penHome ?? '') === '' ? '' : String(r.penHome), penA: (r.penAway ?? '') === '' ? '' : String(r.penAway), st1: (r.st1 ?? '')==='' ? '' : String(r.st1), st2: (r.st2 ?? '')==='' ? '' : String(r.st2), hasET: !!r.hasET, st3: (r.st3 ?? '')==='' ? '' : String(r.st3), st4: (r.st4 ?? '')==='' ? '' : String(r.st4), goalMin: (r.goalMinute ?? '')==='' ? '' : String(r.goalMinute), goalStop: (r.goalStoppage ?? '')==='' ? '' : String(r.goalStoppage) };
     });
   } catch (e) {
     showError('โหลดผลจริงไม่สำเร็จ ลองรีเฟรชหน้าใหม่');
@@ -1070,6 +1070,13 @@ function renderMatch(m) {
   const etA = actuals[m.id]?.etA ?? '';
   const penH = actuals[m.id]?.penH ?? '';
   const penA = actuals[m.id]?.penA ?? '';
+  const aSt1 = actuals[m.id]?.st1 ?? '';
+  const aSt2 = actuals[m.id]?.st2 ?? '';
+  const aHasET = !!actuals[m.id]?.hasET;
+  const aSt3 = actuals[m.id]?.st3 ?? '';
+  const aSt4 = actuals[m.id]?.st4 ?? '';
+  const aGoalMin = actuals[m.id]?.goalMin ?? '';
+  const aGoalStop = actuals[m.id]?.goalStop ?? '';
 
   const key = m.id + '|' + currentUser;
   const ph = preds[key]?.h ?? '';
@@ -1079,7 +1086,16 @@ function renderMatch(m) {
 
   const lockBadge = isLocked ? `<span class="lock-badge" style="font-size:11px;color:var(--text-dim);margin-left:6px;">🔒 ล็อกแล้ว</span>` : '';
 
-  const predRow = `<div class="predictions-rows">
+  const predRow = isMinuteGuessMatch(m.id) ? `<div class="predictions-rows">
+    <div class="prediction-row">
+      <div class="pred-name" title="${escapeHtml(currentUser)}">👤 คำทายของคุณ</div>
+      ${renderMinutePredInputs(m.id, isLocked)}
+      <div class="pred-inputs" style="margin-top:6px;">
+        <span class="save-status" id="save_${m.id}" style="font-size:11px;color:var(--text-dim);"></span>
+        ${lockBadge}
+      </div>
+    </div>
+  </div>` : `<div class="predictions-rows">
     <div class="prediction-row">
       <div class="pred-name" title="${escapeHtml(currentUser)}">👤 คำทายของคุณ</div>
       <div class="pred-inputs">
@@ -1135,6 +1151,36 @@ function renderMatch(m) {
           <option value="A" ${actualWinner==='A'?'selected':''}>${escapeHtml(resolveTeam(m.away))} ชนะ</option>
         </select>
       </div>` : ''}
+      ${isMinuteGuessMatch(m.id) ? `
+      <div style="margin-top:10px;padding:10px;background:rgba(255,209,102,.06);border:1px dashed rgba(255,209,102,.3);border-radius:8px;">
+        <div style="font-size:12px;color:#FFD166;font-weight:600;margin-bottom:7px;">⏱️ ข้อมูลเวลา (สำหรับคิดรางวัลทายนาที)</div>
+        <div class="actual-inputs" style="margin-bottom:6px;">
+          <span style="font-size:12px;color:var(--text-dim);min-width:110px;">ทดเจ็บครึ่งแรก:</span>
+          <select id="st1_${m.id}" class="actual-input" style="width:auto;padding:4px 8px;">${stoppageOptions(aSt1)}</select>
+          <span style="font-size:12px;color:var(--text-dim);min-width:100px;margin-left:10px;">ทดเจ็บครึ่งหลัง:</span>
+          <select id="st2_${m.id}" class="actual-input" style="width:auto;padding:4px 8px;">${stoppageOptions(aSt2)}</select>
+        </div>
+        <div class="actual-inputs" style="margin-bottom:6px;">
+          <label style="font-size:12px;color:var(--text-dim);display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="checkbox" id="haset_${m.id}" ${aHasET?'checked':''} onchange="toggleETFields('${m.id}')" style="width:16px;height:16px;" />
+            มีการต่อเวลาพิเศษ
+          </label>
+        </div>
+        <div id="etfields_${m.id}" class="actual-inputs" style="margin-bottom:6px;${aHasET?'':'display:none;'}">
+          <span style="font-size:12px;color:var(--text-dim);min-width:110px;">ทดต่อเวลาครึ่งแรก:</span>
+          <select id="st3_${m.id}" class="actual-input" style="width:auto;padding:4px 8px;">${stoppageOptions(aSt3)}</select>
+          <span style="font-size:12px;color:var(--text-dim);min-width:100px;margin-left:10px;">ทดต่อเวลาครึ่งหลัง:</span>
+          <select id="st4_${m.id}" class="actual-input" style="width:auto;padding:4px 8px;">${stoppageOptions(aSt4)}</select>
+        </div>
+        <div class="actual-inputs">
+          <span style="font-size:12px;color:#FFD166;min-width:150px;font-weight:600;">🕐 นาทีประตูรองสุดท้าย:</span>
+          <select id="gmA_${m.id}" class="actual-input" style="width:auto;min-width:110px;padding:4px 8px;" onchange="toggleGoalStop('${m.id}')">${minuteOptions(aGoalMin)}</select>
+          <select id="gsA_${m.id}" class="actual-input" style="width:auto;padding:4px 8px;${hasStoppage(aGoalMin)?'':'display:none;'}">${stoppageOptions(aGoalStop)}</select>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">
+          ยิงลูกเดียว = กรอกนาทีลูกนั้น · 0-0 = ปล่อยว่าง (ไม่มีผู้ชนะ)
+        </div>
+      </div>` : ''}
     </div>` : (actualH !== '' && actualA !== '' ? `
     <div class="actual-score-row">
       <div class="actual-label">ผลจริง</div>
@@ -1166,6 +1212,70 @@ function renderMatch(m) {
 
 // ── PREDICTIONS ───────────────────────────────────────────────────────────
 // แสดงช่องทาย ET/PEN แบบ dynamic (โผล่เมื่อทายเสมอ)
+// ── MINUTE-GUESS MATCHES (นัดชิงที่ 3 และนัดชิงชนะเลิศ) ──────────
+function isMinuteGuessMatch(id) {
+  return id === '3rd' || id === 'final';
+}
+
+// dropdown นาที 1-120 และทดเจ็บ +0..+15
+function minuteOptions(sel) {
+  let h = '<option value="">– เลือกนาที –</option>';
+  for (let m = 1; m <= 120; m++) {
+    h += `<option value="${m}"${String(sel)===String(m)?' selected':''}>${m}</option>`;
+  }
+  return h;
+}
+function stoppageOptions(sel) {
+  let h = '';
+  for (let s = 0; s <= 15; s++) {
+    h += `<option value="${s}"${String(sel)===String(s)?' selected':''}>+${s}</option>`;
+  }
+  return h;
+}
+// นาทีที่มีทดเจ็บได้
+function hasStoppage(m) {
+  const n = parseInt(m);
+  return n===45 || n===90 || n===105 || n===120;
+}
+
+// toggle ช่องต่อเวลา (admin)
+function toggleETFields(matchId) {
+  const cb = document.getElementById(`haset_${matchId}`);
+  const el = document.getElementById(`etfields_${matchId}`);
+  if (el) el.style.display = cb && cb.checked ? '' : 'none';
+}
+// toggle ช่องทดเจ็บของนาทีประตู (admin)
+function toggleGoalStop(matchId) {
+  const gm = document.getElementById(`gmA_${matchId}`)?.value ?? '';
+  const el = document.getElementById(`gsA_${matchId}`);
+  if (el) el.style.display = hasStoppage(gm) ? '' : 'none';
+}
+
+function renderMinutePredInputs(matchId, isLocked) {
+  const key = matchId + '|' + currentUser;
+  const p = preds[key] || {};
+  const gm = p.gMin ?? '';
+  const gs = p.gStop ?? '';
+  const dis = isLocked ? 'disabled' : '';
+  const showStop = hasStoppage(gm);
+  return `
+    <div class="pred-inputs" style="margin-top:6px;align-items:center;flex-wrap:wrap;gap:8px;">
+      <span style="font-size:13px;color:#FFD166;">🕐 ทายนาทีประตูรองสุดท้าย:</span>
+      <select id="gmin_${matchId}" class="score-input" style="width:auto;min-width:110px;padding:6px 8px;"
+        onchange="onPredInput('${matchId}')" ${dis}>
+        ${minuteOptions(gm)}
+      </select>
+      <select id="gstop_${matchId}" class="score-input"
+        style="width:auto;min-width:78px;padding:6px 8px;${showStop?'':'display:none;'}"
+        onchange="onPredInput('${matchId}')" ${dis}>
+        ${stoppageOptions(gs)}
+      </select>
+    </div>
+    <div style="font-size:11px;color:var(--text-dim);margin-top:5px;">
+      นับทุกประตูรวมช่วงต่อเวลา (ไม่นับจุดโทษ) · ยิงลูกเดียว = ใช้นาทีลูกนั้น
+    </div>`;
+}
+
 function renderKnockoutPredInputs(matchId, isLocked) {
   const key = matchId + '|' + currentUser;
   const p = preds[key] || {};
@@ -1202,6 +1312,30 @@ function renderKnockoutPredInputs(matchId, isLocked) {
 let savePredTimers = {};
 function onPredInput(matchId) {
   if (locks[matchId]) return;
+
+  // ── นัดทายนาที (3rd/final) ──
+  if (isMinuteGuessMatch(matchId)) {
+    const gm = document.getElementById(`gmin_${matchId}`)?.value ?? '';
+    let gs = document.getElementById(`gstop_${matchId}`)?.value ?? '';
+    // โผล่/ซ่อนช่องทดเจ็บ
+    const stopEl = document.getElementById(`gstop_${matchId}`);
+    if (stopEl) {
+      if (hasStoppage(gm)) {
+        stopEl.style.display = '';
+      } else {
+        stopEl.style.display = 'none';
+        gs = '';
+        stopEl.value = '0';
+      }
+    }
+    preds[matchId + '|' + currentUser] = { gMin: gm, gStop: gs };
+    const statusEl = document.getElementById(`save_${matchId}`);
+    if (statusEl) statusEl.textContent = gm === '' ? '' : 'กำลังบันทึก...';
+    clearTimeout(savePredTimers[matchId]);
+    savePredTimers[matchId] = setTimeout(() => saveMinutePrediction(matchId, gm, gs), 600);
+    return;
+  }
+
   const h = document.getElementById(`ph_${matchId}`)?.value;
   const a = document.getElementById(`pa_${matchId}`)?.value;
   const etH = document.getElementById(`peth_${matchId}`)?.value ?? '';
@@ -1235,6 +1369,46 @@ function onPredInput(matchId) {
 
   clearTimeout(savePredTimers[matchId]);
   savePredTimers[matchId] = setTimeout(() => savePrediction(matchId, h, a, etH, etA, penH, penA), 600);
+}
+
+// บันทึกคำทายนาที (3rd/final)
+async function saveMinutePrediction(matchId, gm, gs) {
+  const statusEl = document.getElementById(`save_${matchId}`);
+  if (gm === '' || gm == null) {
+    if (statusEl) statusEl.textContent = '';
+    return;
+  }
+  try {
+    const result = await apiPost({
+      action: 'savePrediction',
+      name: currentUser,
+      matchId: matchId,
+      homeScore: '',
+      awayScore: '',
+      guessMinute: parseInt(gm),
+      guessStoppage: (gs === '' || gs == null) ? '' : parseInt(gs)
+    });
+    if (result.error) {
+      if (statusEl) {
+        statusEl.textContent = '🔒 แมตช์นี้ถูกล็อกแล้ว';
+        statusEl.style.color = '#ff6b6b';
+      }
+      locks[matchId] = true;
+      renderAllStages();
+      return;
+    }
+    if (statusEl) {
+      const label = hasStoppage(gm) && gs !== '' ? `${gm}+${gs}` : gm;
+      statusEl.textContent = `✓ บันทึกแล้ว (นาที ${label})`;
+      statusEl.style.color = 'var(--green-light)';
+      setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 2500);
+    }
+  } catch (e) {
+    if (statusEl) {
+      statusEl.textContent = '⚠️ บันทึกไม่สำเร็จ';
+      statusEl.style.color = '#ff6b6b';
+    }
+  }
 }
 
 async function savePrediction(matchId, h, a, etH, etA, penH, penA) {
@@ -1289,6 +1463,21 @@ async function saveActual(matchId) {
   const etA = document.getElementById(`eta_${matchId}`)?.value ?? '';
   const penH = document.getElementById(`penh_${matchId}`)?.value ?? '';
   const penA = document.getElementById(`pena_${matchId}`)?.value ?? '';
+  // ข้อมูลเวลา (เฉพาะ 3rd/final)
+  let extra = null;
+  if (isMinuteGuessMatch(matchId)) {
+    const gm = document.getElementById(`gmA_${matchId}`)?.value ?? '';
+    const gs = document.getElementById(`gsA_${matchId}`)?.value ?? '';
+    extra = {
+      st1: document.getElementById(`st1_${matchId}`)?.value ?? '',
+      st2: document.getElementById(`st2_${matchId}`)?.value ?? '',
+      hasET: !!document.getElementById(`haset_${matchId}`)?.checked,
+      st3: document.getElementById(`st3_${matchId}`)?.value ?? '',
+      st4: document.getElementById(`st4_${matchId}`)?.value ?? '',
+      goalMinute: gm === '' ? '' : parseInt(gm),
+      goalStoppage: (gm === '' || !hasStoppage(gm)) ? '' : (gs === '' ? 0 : parseInt(gs))
+    };
+  }
   // เตือนถ้า knockout เสมอแต่ไม่ได้เลือกทีมเข้ารอบ
   if (isKnockoutMatch(matchId) && parseInt(h) === parseInt(a) && !winner) {
     if (!confirm('ผล 90 นาทีเสมอ แต่ยังไม่ได้เลือกทีมเข้ารอบ\nทีมถัดไปจะยังไม่ถูกเติมชื่อ\n\nต้องการบันทึกต่อไหม?')) return;
@@ -1304,6 +1493,7 @@ async function saveActual(matchId) {
       etAway: etA === '' ? '' : parseInt(etA),
       penHome: penH === '' ? '' : parseInt(penH),
       penAway: penA === '' ? '' : parseInt(penA),
+      extra: extra,
       password: window._adminPw || ''
     });
     if (result.error) {
@@ -1316,7 +1506,13 @@ async function saveActual(matchId) {
     actuals[matchId] = {
       h: String(h), a: String(a), winner: winner,
       etH: etH === '' ? '' : String(etH), etA: etA === '' ? '' : String(etA),
-      penH: penH === '' ? '' : String(penH), penA: penA === '' ? '' : String(penA)
+      penH: penH === '' ? '' : String(penH), penA: penA === '' ? '' : String(penA),
+      ...(extra ? {
+        st1: String(extra.st1), st2: String(extra.st2), hasET: extra.hasET,
+        st3: String(extra.st3), st4: String(extra.st4),
+        goalMin: extra.goalMinute === '' ? '' : String(extra.goalMinute),
+        goalStop: extra.goalStoppage === '' ? '' : String(extra.goalStoppage)
+      } : {})
     };
     renderAllStages();
     alert('บันทึกผลจริงแล้ว');
@@ -1500,7 +1696,7 @@ async function renderScoreboard() {
     players = [];
     const seen = new Set();
     (predRows || []).forEach(r => {
-      preds[r.matchId + '|' + r.name] = { h: String(r.homeScore), a: String(r.awayScore), etH: (r.etHome ?? '')==='' ? '' : String(r.etHome), etA: (r.etAway ?? '')==='' ? '' : String(r.etAway), penH: (r.penHome ?? '')==='' ? '' : String(r.penHome), penA: (r.penAway ?? '')==='' ? '' : String(r.penAway) };
+      preds[r.matchId + '|' + r.name] = { h: String(r.homeScore), a: String(r.awayScore), etH: (r.etHome ?? '')==='' ? '' : String(r.etHome), etA: (r.etAway ?? '')==='' ? '' : String(r.etAway), penH: (r.penHome ?? '')==='' ? '' : String(r.penHome), penA: (r.penAway ?? '')==='' ? '' : String(r.penAway), gMin: (r.guessMinute ?? '')==='' ? '' : String(r.guessMinute), gStop: (r.guessStoppage ?? '')==='' ? '' : String(r.guessStoppage) };
       if (!seen.has(r.name)) { seen.add(r.name); players.push(r.name); }
     });
     if (currentUser && !players.includes(currentUser)) players.push(currentUser);
@@ -1508,7 +1704,7 @@ async function renderScoreboard() {
     const actualRows = await apiGet('getActuals');
     actuals = {};
     (actualRows || []).forEach(r => {
-      actuals[r.matchId] = { h: String(r.homeScore), a: String(r.awayScore), winner: r.winner || '', etH: (r.etHome ?? '') === '' ? '' : String(r.etHome), etA: (r.etAway ?? '') === '' ? '' : String(r.etAway), penH: (r.penHome ?? '') === '' ? '' : String(r.penHome), penA: (r.penAway ?? '') === '' ? '' : String(r.penAway) };
+      actuals[r.matchId] = { h: String(r.homeScore), a: String(r.awayScore), winner: r.winner || '', etH: (r.etHome ?? '') === '' ? '' : String(r.etHome), etA: (r.etAway ?? '') === '' ? '' : String(r.etAway), penH: (r.penHome ?? '') === '' ? '' : String(r.penHome), penA: (r.penAway ?? '') === '' ? '' : String(r.penAway), st1: (r.st1 ?? '')==='' ? '' : String(r.st1), st2: (r.st2 ?? '')==='' ? '' : String(r.st2), hasET: !!r.hasET, st3: (r.st3 ?? '')==='' ? '' : String(r.st3), st4: (r.st4 ?? '')==='' ? '' : String(r.st4), goalMin: (r.goalMinute ?? '')==='' ? '' : String(r.goalMinute), goalStop: (r.goalStoppage ?? '')==='' ? '' : String(r.goalStoppage) };
     });
   } catch (e) {
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ff6b6b;padding:24px;">โหลดข้อมูลไม่สำเร็จ ลองใหม่อีกครั้ง</td></tr>`;
@@ -1766,8 +1962,101 @@ function rankAndAssignPrizesClient(totals, prizeRow) {
   return winners;
 }
 
+// ── MINUTE-GUESS: client mirror ของ Apps Script (ต้องตรงกันเป๊ะ) ──
+function buildTimelineClient(st1, st2, hasET, st3, st4, extendTo90, extendToMin) {
+  st1 = Number(st1)||0; st2 = Number(st2)||0;
+  st3 = Number(st3)||0; st4 = Number(st4)||0;
+  const tl = [];
+  for (let m=1; m<=45; m++) tl.push(m + '|0');
+  for (let s=1; s<=st1; s++) tl.push('45|' + s);
+  for (let m=46; m<=90; m++) tl.push(m + '|0');
+  const last2 = hasET ? st2 : Math.max(st2, Number(extendTo90)||0);
+  for (let s=1; s<=last2; s++) tl.push('90|' + s);
+  if (hasET) {
+    for (let m=91; m<=105; m++) tl.push(m + '|0');
+    for (let s=1; s<=st3; s++) tl.push('105|' + s);
+    for (let m=106; m<=120; m++) tl.push(m + '|0');
+    for (let s=1; s<=st4; s++) tl.push('120|' + s);
+  } else {
+    const ext = Number(extendToMin)||0;
+    for (let m=91; m<=ext; m++) tl.push(m + '|0');
+  }
+  return tl;
+}
+
+function resolveMinuteIndexClient(pm, ps, tl, st1, st2, hasET) {
+  pm = Number(pm); ps = Number(ps)||0;
+  if (isNaN(pm)) return null;
+  st1 = Number(st1)||0; st2 = Number(st2)||0;
+  let i = tl.indexOf(pm + '|' + ps);
+  if (i >= 0) return i;
+  if (pm === 90 && ps > st2 && hasET) {
+    const overflow = ps - st2;
+    i = tl.indexOf((90 + overflow) + '|0');
+    if (i >= 0) return i;
+  }
+  if (pm === 45 && ps > st1) {
+    for (let j = tl.length-1; j >= 0; j--) {
+      if (tl[j].indexOf('45|') === 0) return j;
+    }
+  }
+  return null;
+}
+
+function computeMinuteWinnersClient(period, prizeRow) {
+  const matchId = (period === 'third') ? '3rd' : 'final';
+  const act = actuals[matchId];
+  if (!act) return [];
+  const goalMin = (act.goalMin === '' || act.goalMin == null) ? null : Number(act.goalMin);
+  if (goalMin == null || isNaN(goalMin)) return [];   // 0-0 หรือยังไม่กรอก
+  const goalStop = Number(act.goalStop) || 0;
+  const st1 = Number(act.st1)||0, st2 = Number(act.st2)||0;
+  const hasET = !!act.hasET;
+  const st3 = Number(act.st3)||0, st4 = Number(act.st4)||0;
+
+  // รวมคำทายทุกคน
+  const list = [];
+  players.forEach(p => {
+    const pr = preds[matchId + '|' + p];
+    if (!pr || pr.gMin === '' || pr.gMin == null) return;
+    list.push({ name: p, m: Number(pr.gMin), s: Number(pr.gStop)||0 });
+  });
+  if (list.length === 0) return [];
+
+  let ext90 = 0, extMin = 0;
+  list.forEach(x => {
+    if (x.m === 90) ext90 = Math.max(ext90, x.s);
+    if (x.m > 90) extMin = Math.max(extMin, x.m);
+  });
+
+  const tl = buildTimelineClient(st1, st2, hasET, st3, st4, ext90, extMin);
+  const ai = tl.indexOf(goalMin + '|' + goalStop);
+  if (ai < 0) return [];
+
+  const diffs = {};
+  list.forEach(x => {
+    const pi = resolveMinuteIndexClient(x.m, x.s, tl, st1, st2, hasET);
+    if (pi == null) return;
+    diffs[x.name] = Math.abs(pi - ai);
+  });
+  const names = Object.keys(diffs);
+  if (names.length === 0) return [];
+  let best = Infinity;
+  names.forEach(n => { if (diffs[n] < best) best = diffs[n]; });
+  const winners = names.filter(n => diffs[n] === best);
+  const pool = Number(prizeRow.rank1) || 0;
+  const each = winners.length > 0 ? Math.floor(pool / winners.length) : 0;
+  return winners.map(n => ({
+    name: n, points: diffs[n], prize: each, rank: 1,
+    note: 'ห่าง ' + diffs[n] + ' นาที'
+  }));
+}
+
 // Compute provisional winners for a match-based period (not announced yet)
 function computeProvisionalWinners(period, prizeRow) {
+  if (period === 'third' || period === 'final') {
+    return computeMinuteWinnersClient(period, prizeRow);
+  }
   if (!PERIOD_MATCHES[period]) return [];
   const totals = computePeriodTotals(period);
   // only count players who actually have at least one scored match in this period
@@ -1776,6 +2065,12 @@ function computeProvisionalWinners(period, prizeRow) {
 
 // Does this period have any actual results entered yet?
 function periodHasResults(period) {
+  if (period === 'third' || period === 'final') {
+    const mid = period === 'third' ? '3rd' : 'final';
+    const a = actuals[mid];
+    // มีผลเมื่อกรอกสกอร์แล้ว (นาทีประตูอาจว่างได้ถ้า 0-0)
+    return !!(a && a.h !== '' && a.a !== '');
+  }
   const ids = PERIOD_MATCHES[period] || [];
   return ids.some(id => actuals[id] && actuals[id].h !== '' && actuals[id].a !== '');
 }
