@@ -243,6 +243,103 @@
   .stage-panel { display: none; }
   .stage-panel.active { display: block; }
 
+  /* ══ FINAL STAGE — ธีมถ้วยทอง 2 นัดสุดท้าย ══ */
+  #panel-final {
+    position: relative;
+    border-radius: 16px;
+    padding: 22px 14px 16px;
+    background:
+      radial-gradient(ellipse 70% 50% at 50% 0%, rgba(255,209,102,.14), transparent 62%),
+      radial-gradient(ellipse 50% 40% at 15% 85%, rgba(255,184,0,.07), transparent 60%),
+      linear-gradient(170deg, #0e1420 0%, #0a1018 55%, #0d1119 100%);
+    border: 1px solid rgba(255,209,102,.22);
+    box-shadow: 0 0 60px rgba(255,184,0,.06) inset;
+    overflow: hidden;
+  }
+  /* ถ้วยรางวัลเรืองแสงเป็นพื้นหลัง */
+  #panel-final::before {
+    content: '🏆';
+    position: absolute;
+    top: -18px; right: -8px;
+    font-size: 190px;
+    opacity: .05;
+    transform: rotate(-12deg);
+    pointer-events: none;
+    filter: drop-shadow(0 0 26px rgba(255,209,102,.5));
+    animation: trophyGlow 5s ease-in-out infinite;
+  }
+  @keyframes trophyGlow {
+    0%,100% { opacity:.04; transform: rotate(-12deg) scale(1); }
+    50%     { opacity:.09; transform: rotate(-12deg) scale(1.04); }
+  }
+  /* แถบทองด้านบน */
+  #panel-final::after {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, transparent, #FFD166 20%, #FFB800 50%, #FFD166 80%, transparent);
+    animation: goldSweep 3.5s ease-in-out infinite;
+  }
+  @keyframes goldSweep {
+    0%,100% { opacity:.45; }
+    50%     { opacity:1; }
+  }
+  /* หัวข้อรอบชิงในพาเนล */
+  .final-banner {
+    position: relative; z-index: 2;
+    text-align: center;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(255,209,102,.16);
+  }
+  .final-banner .fb-cup {
+    font-size: 34px; display: block; margin-bottom: 4px;
+    filter: drop-shadow(0 0 14px rgba(255,209,102,.65));
+    animation: cupFloat 3s ease-in-out infinite;
+  }
+  @keyframes cupFloat {
+    0%,100% { transform: translateY(0); }
+    50%     { transform: translateY(-5px); }
+  }
+  .final-banner .fb-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px; letter-spacing: 3px;
+    background: linear-gradient(100deg,#FFE9A8,#FFD166,#FFB800,#FFD166,#FFE9A8);
+    background-size: 200% auto;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: goldFlow 4s linear infinite;
+    line-height: 1.1;
+  }
+  @keyframes goldFlow { to { background-position: 200% center; } }
+  .final-banner .fb-sub {
+    font-size: 12px; color: rgba(255,209,102,.72); margin-top: 3px;
+    letter-spacing: .5px;
+  }
+  /* การ์ดแมตช์ในรอบชิง */
+  #panel-final .match-card {
+    position: relative; z-index: 2;
+    border-color: rgba(255,209,102,.3);
+    background: linear-gradient(165deg, rgba(24,28,40,.94), rgba(14,18,26,.9));
+    box-shadow: 0 6px 26px rgba(0,0,0,.4), 0 0 0 1px rgba(255,209,102,.06) inset;
+  }
+  #panel-final .match-card:hover { border-color: rgba(255,209,102,.5); }
+  #panel-final .day-header {
+    position: relative; z-index: 2;
+    border-left-color: #FFD166;
+    background: linear-gradient(90deg, rgba(255,209,102,.1), transparent);
+  }
+  /* ป้ายชื่อนัดในรอบชิง */
+  #panel-final .match-group {
+    background: linear-gradient(135deg,#FFD166,#FFB800);
+    color: #1a1408; border: none; font-weight: 700;
+    box-shadow: 0 2px 8px rgba(255,184,0,.3);
+  }
+  @media (max-width: 640px) {
+    #panel-final { padding: 18px 8px 12px; }
+    #panel-final::before { font-size: 130px; top: -10px; right: -14px; }
+    .final-banner .fb-title { font-size: 21px; letter-spacing: 2px; }
+  }
+
   .day-block { margin-top: 0; }
   .day-header {
     background: var(--dark3);
@@ -355,9 +452,7 @@
 
   /* ── ACTUAL SCORE (admin) ── */
   .actual-score-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    display: block;
     margin-top: 10px;
     padding-top: 10px;
     border-top: 1px dashed var(--border);
@@ -365,10 +460,16 @@
   .actual-label {
     font-size: 11px;
     color: var(--text-dim);
-    min-width: 130px;
-    text-align: right;
+    margin-bottom: 6px;
+    display: block;
   }
-  .actual-inputs { display: flex; align-items: center; gap: 6px; }
+  .actual-inputs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
   .actual-input {
     width: 44px;
     text-align: center;
@@ -379,6 +480,11 @@
     padding: 5px 4px;
     font-family: 'Bebas Neue', sans-serif;
     font-size: 18px;
+    max-width: 100%;
+  }
+  select.actual-input {
+    font-family: 'IBM Plex Sans Thai', sans-serif;
+    font-size: 13px;
   }
   .actual-input:focus { outline: none; border-color: var(--green-light); }
   .calc-btn {
@@ -610,7 +716,7 @@
 <div id="loadingMsg" style="text-align:center; padding:30px; color:var(--text-dim); font-size:13px;">กำลังโหลดข้อมูล...</div>
 
 <div style="text-align:center; padding:20px; color:var(--text-dim); font-size:11px;">
-  เวอร์ชัน 2.4 ·
+  เวอร์ชัน 3.0 ·
   <a href="javascript:location.reload(true)" style="color:var(--gold); text-decoration:underline;">โหลดข้อมูลใหม่</a>
 </div>
 <script>
@@ -985,6 +1091,16 @@ function renderAllStages() {
     const div = document.createElement('div');
     div.className = 'stage-panel' + (stage === currentStage ? ' active' : '');
     div.id = 'panel-' + stage;
+    // แบนเนอร์พิเศษสำหรับรอบชิง
+    if (stage === 'final') {
+      const banner = document.createElement('div');
+      banner.className = 'final-banner';
+      banner.innerHTML = `
+        <span class="fb-cup">🏆</span>
+        <div class="fb-title">THE FINAL STAGE</div>
+        <div class="fb-sub">2 นัดสุดท้าย · ทายนาทีประตูรองสุดท้าย</div>`;
+      div.appendChild(banner);
+    }
     div.appendChild(renderStage(stage, MATCHES[stage]));
     container.appendChild(div);
   });
@@ -1131,53 +1247,57 @@ function renderMatch(m) {
         <button class="calc-btn" style="background:${isLocked ? '#666' : '#b33'};margin-left:6px;" onclick="toggleLock('${m.id}')">${isLocked ? '🔓 ปลดล็อก' : '🔒 ล็อกแมตช์นี้'}</button>
       </div>
       ${isKnockoutMatch(m.id) ? `
-      <div class="actual-inputs" style="margin-top:8px;">
-        <span style="font-size:12px;color:var(--text-dim);min-width:90px;">⏱️ ต่อเวลา (ถ้ามี):</span>
-        <input class="actual-input" type="number" min="0" max="99" id="eth_${m.id}" value="${etH}" placeholder="–" style="width:50px;" />
-        <span class="score-sep" style="color:#FFD166">:</span>
-        <input class="actual-input" type="number" min="0" max="99" id="eta_${m.id}" value="${etA}" placeholder="–" style="width:50px;" />
-      </div>
-      <div class="actual-inputs" style="margin-top:6px;">
-        <span style="font-size:12px;color:var(--text-dim);min-width:90px;">🥅 จุดโทษ (ถ้ามี):</span>
-        <input class="actual-input" type="number" min="0" max="99" id="penh_${m.id}" value="${penH}" placeholder="–" style="width:50px;" />
-        <span class="score-sep" style="color:#22B8FF">:</span>
-        <input class="actual-input" type="number" min="0" max="99" id="pena_${m.id}" value="${penA}" placeholder="–" style="width:50px;" />
-      </div>
-      <div class="actual-inputs" style="margin-top:6px;">
-        <span style="font-size:12px;color:var(--text-dim);min-width:90px;">🏆 ทีมเข้ารอบ:</span>
-        <select id="win_${m.id}" class="actual-input" style="width:auto;min-width:140px;padding:4px 8px;">
-          <option value="">– อัตโนมัติจากสกอร์ –</option>
-          <option value="H" ${actualWinner==='H'?'selected':''}>${escapeHtml(resolveTeam(m.home))} ชนะ</option>
-          <option value="A" ${actualWinner==='A'?'selected':''}>${escapeHtml(resolveTeam(m.away))} ชนะ</option>
-        </select>
+      <div style="margin-top:10px;padding:10px;background:rgba(124,252,140,.04);border:1px dashed rgba(124,252,140,.25);border-radius:8px;">
+        <div class="actual-inputs" style="margin-bottom:8px;">
+          <span style="font-size:12px;color:var(--text-dim);min-width:74px;">⏱️ ต่อเวลา:</span>
+          <input class="actual-input" type="number" min="0" max="99" id="eth_${m.id}" value="${etH}" placeholder="–" />
+          <span class="score-sep" style="color:#FFD166">:</span>
+          <input class="actual-input" type="number" min="0" max="99" id="eta_${m.id}" value="${etA}" placeholder="–" />
+          <span style="font-size:11px;color:var(--text-dim);">(ถ้ามี)</span>
+        </div>
+        <div class="actual-inputs" style="margin-bottom:8px;">
+          <span style="font-size:12px;color:var(--text-dim);min-width:74px;">🥅 จุดโทษ:</span>
+          <input class="actual-input" type="number" min="0" max="99" id="penh_${m.id}" value="${penH}" placeholder="–" />
+          <span class="score-sep" style="color:#22B8FF">:</span>
+          <input class="actual-input" type="number" min="0" max="99" id="pena_${m.id}" value="${penA}" placeholder="–" />
+          <span style="font-size:11px;color:var(--text-dim);">(ถ้ามี)</span>
+        </div>
+        <div class="actual-inputs">
+          <span style="font-size:12px;color:var(--text-dim);min-width:74px;">🏆 เข้ารอบ:</span>
+          <select id="win_${m.id}" class="actual-input" style="width:auto;max-width:200px;padding:5px 8px;">
+            <option value="">– อัตโนมัติจากสกอร์ –</option>
+            <option value="H" ${actualWinner==='H'?'selected':''}>${escapeHtml(resolveTeam(m.home))} ชนะ</option>
+            <option value="A" ${actualWinner==='A'?'selected':''}>${escapeHtml(resolveTeam(m.away))} ชนะ</option>
+          </select>
+        </div>
       </div>` : ''}
       ${isMinuteGuessMatch(m.id) ? `
-      <div style="margin-top:10px;padding:10px;background:rgba(255,209,102,.06);border:1px dashed rgba(255,209,102,.3);border-radius:8px;">
-        <div style="font-size:12px;color:#FFD166;font-weight:600;margin-bottom:7px;">⏱️ ข้อมูลเวลา (สำหรับคิดรางวัลทายนาที)</div>
-        <div class="actual-inputs" style="margin-bottom:6px;">
-          <span style="font-size:12px;color:var(--text-dim);min-width:110px;">ทดเจ็บครึ่งแรก:</span>
-          <select id="st1_${m.id}" class="actual-input" style="width:auto;padding:4px 8px;">${stoppageOptions(aSt1)}</select>
-          <span style="font-size:12px;color:var(--text-dim);min-width:100px;margin-left:10px;">ทดเจ็บครึ่งหลัง:</span>
-          <select id="st2_${m.id}" class="actual-input" style="width:auto;padding:4px 8px;">${stoppageOptions(aSt2)}</select>
+      <div style="margin-top:10px;padding:11px;background:rgba(255,209,102,.06);border:1px dashed rgba(255,209,102,.35);border-radius:8px;">
+        <div style="font-size:12px;color:#FFD166;font-weight:600;margin-bottom:9px;">⏱️ ข้อมูลเวลา (สำหรับคิดรางวัลทายนาที)</div>
+        <div class="actual-inputs" style="margin-bottom:8px;">
+          <span style="font-size:12px;color:var(--text-dim);min-width:78px;">ทดเจ็บ ค.แรก:</span>
+          <select id="st1_${m.id}" class="actual-input" style="width:auto;padding:5px 7px;">${stoppageOptions(aSt1)}</select>
+          <span style="font-size:12px;color:var(--text-dim);margin-left:6px;">ค.หลัง:</span>
+          <select id="st2_${m.id}" class="actual-input" style="width:auto;padding:5px 7px;">${stoppageOptions(aSt2)}</select>
         </div>
-        <div class="actual-inputs" style="margin-bottom:6px;">
-          <label style="font-size:12px;color:var(--text-dim);display:flex;align-items:center;gap:6px;cursor:pointer;">
+        <div class="actual-inputs" style="margin-bottom:8px;">
+          <label style="font-size:12px;color:var(--text-dim);display:flex;align-items:center;gap:7px;cursor:pointer;">
             <input type="checkbox" id="haset_${m.id}" ${aHasET?'checked':''} onchange="toggleETFields('${m.id}')" style="width:16px;height:16px;" />
             มีการต่อเวลาพิเศษ
           </label>
         </div>
-        <div id="etfields_${m.id}" class="actual-inputs" style="margin-bottom:6px;${aHasET?'':'display:none;'}">
-          <span style="font-size:12px;color:var(--text-dim);min-width:110px;">ทดต่อเวลาครึ่งแรก:</span>
-          <select id="st3_${m.id}" class="actual-input" style="width:auto;padding:4px 8px;">${stoppageOptions(aSt3)}</select>
-          <span style="font-size:12px;color:var(--text-dim);min-width:100px;margin-left:10px;">ทดต่อเวลาครึ่งหลัง:</span>
-          <select id="st4_${m.id}" class="actual-input" style="width:auto;padding:4px 8px;">${stoppageOptions(aSt4)}</select>
+        <div id="etfields_${m.id}" class="actual-inputs" style="margin-bottom:8px;${aHasET?'':'display:none;'}">
+          <span style="font-size:12px;color:var(--text-dim);min-width:78px;">ทด ET ค.แรก:</span>
+          <select id="st3_${m.id}" class="actual-input" style="width:auto;padding:5px 7px;">${stoppageOptions(aSt3)}</select>
+          <span style="font-size:12px;color:var(--text-dim);margin-left:6px;">ค.หลัง:</span>
+          <select id="st4_${m.id}" class="actual-input" style="width:auto;padding:5px 7px;">${stoppageOptions(aSt4)}</select>
         </div>
-        <div class="actual-inputs">
-          <span style="font-size:12px;color:#FFD166;min-width:150px;font-weight:600;">🕐 นาทีประตูรองสุดท้าย:</span>
-          <select id="gmA_${m.id}" class="actual-input" style="width:auto;min-width:110px;padding:4px 8px;" onchange="toggleGoalStop('${m.id}')">${minuteOptions(aGoalMin)}</select>
-          <select id="gsA_${m.id}" class="actual-input" style="width:auto;padding:4px 8px;${hasStoppage(aGoalMin)?'':'display:none;'}">${stoppageOptions(aGoalStop)}</select>
+        <div class="actual-inputs" style="padding-top:8px;border-top:1px dashed rgba(255,209,102,.2);">
+          <span style="font-size:12px;color:#FFD166;font-weight:600;width:100%;margin-bottom:5px;">🕐 นาทีประตูรองสุดท้าย</span>
+          <select id="gmA_${m.id}" class="actual-input" style="width:auto;min-width:110px;padding:5px 8px;" onchange="toggleGoalStop('${m.id}')">${minuteOptions(aGoalMin)}</select>
+          <select id="gsA_${m.id}" class="actual-input" style="width:auto;padding:5px 7px;${hasStoppage(aGoalMin)?'':'display:none;'}">${stoppageOptions(aGoalStop)}</select>
         </div>
-        <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">
+        <div style="font-size:11px;color:var(--text-dim);margin-top:7px;line-height:1.5;">
           ยิงลูกเดียว = กรอกนาทีลูกนั้น · 0-0 = ปล่อยว่าง (ไม่มีผู้ชนะ)
         </div>
       </div>` : ''}
