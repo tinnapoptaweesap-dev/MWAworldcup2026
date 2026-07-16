@@ -716,7 +716,7 @@
 <div id="loadingMsg" style="text-align:center; padding:30px; color:var(--text-dim); font-size:13px;">กำลังโหลดข้อมูล...</div>
 
 <div style="text-align:center; padding:20px; color:var(--text-dim); font-size:11px;">
-  เวอร์ชัน 3.0 ·
+  เวอร์ชัน 3.1 ·
   <a href="javascript:location.reload(true)" style="color:var(--gold); text-decoration:underline;">โหลดข้อมูลใหม่</a>
 </div>
 <script>
@@ -1574,40 +1574,49 @@ async function savePrediction(matchId, h, a, etH, etA, penH, penA) {
 async function saveActual(matchId) {
   const h = document.getElementById(`ah_${matchId}`)?.value;
   const a = document.getElementById(`aa_${matchId}`)?.value;
-  if (h === '' || a === '') {
-    alert('กรุณากรอกผลทั้งสองช่อง');
+  // เว้นว่างทั้งคู่ = ล้างผลจริงของแมตช์นี้
+  const clearing = (h === '' && a === '');
+  if (!clearing && (h === '' || a === '')) {
+    alert('กรุณากรอกผลทั้งสองช่อง (หรือเว้นว่างทั้งคู่เพื่อล้างผล)');
     return;
   }
-  const winner = document.getElementById(`win_${matchId}`)?.value || '';
-  const etH = document.getElementById(`eth_${matchId}`)?.value ?? '';
-  const etA = document.getElementById(`eta_${matchId}`)?.value ?? '';
-  const penH = document.getElementById(`penh_${matchId}`)?.value ?? '';
-  const penA = document.getElementById(`pena_${matchId}`)?.value ?? '';
+  if (clearing) {
+    if (!confirm('ล้างผลจริงของแมตช์นี้ทั้งหมด?\n(สกอร์ / ต่อเวลา / จุดโทษ / ทีมเข้ารอบ / ข้อมูลเวลา)')) return;
+  }
+  const winner = clearing ? '' : (document.getElementById(`win_${matchId}`)?.value || '');
+  const etH = clearing ? '' : (document.getElementById(`eth_${matchId}`)?.value ?? '');
+  const etA = clearing ? '' : (document.getElementById(`eta_${matchId}`)?.value ?? '');
+  const penH = clearing ? '' : (document.getElementById(`penh_${matchId}`)?.value ?? '');
+  const penA = clearing ? '' : (document.getElementById(`pena_${matchId}`)?.value ?? '');
   // ข้อมูลเวลา (เฉพาะ 3rd/final)
   let extra = null;
   if (isMinuteGuessMatch(matchId)) {
-    const gm = document.getElementById(`gmA_${matchId}`)?.value ?? '';
-    const gs = document.getElementById(`gsA_${matchId}`)?.value ?? '';
-    extra = {
-      st1: document.getElementById(`st1_${matchId}`)?.value ?? '',
-      st2: document.getElementById(`st2_${matchId}`)?.value ?? '',
-      hasET: !!document.getElementById(`haset_${matchId}`)?.checked,
-      st3: document.getElementById(`st3_${matchId}`)?.value ?? '',
-      st4: document.getElementById(`st4_${matchId}`)?.value ?? '',
-      goalMinute: gm === '' ? '' : parseInt(gm),
-      goalStoppage: (gm === '' || !hasStoppage(gm)) ? '' : (gs === '' ? 0 : parseInt(gs))
-    };
+    if (clearing) {
+      extra = { st1:'', st2:'', hasET:false, st3:'', st4:'', goalMinute:'', goalStoppage:'' };
+    } else {
+      const gm = document.getElementById(`gmA_${matchId}`)?.value ?? '';
+      const gs = document.getElementById(`gsA_${matchId}`)?.value ?? '';
+      extra = {
+        st1: document.getElementById(`st1_${matchId}`)?.value ?? '',
+        st2: document.getElementById(`st2_${matchId}`)?.value ?? '',
+        hasET: !!document.getElementById(`haset_${matchId}`)?.checked,
+        st3: document.getElementById(`st3_${matchId}`)?.value ?? '',
+        st4: document.getElementById(`st4_${matchId}`)?.value ?? '',
+        goalMinute: gm === '' ? '' : parseInt(gm),
+        goalStoppage: (gm === '' || !hasStoppage(gm)) ? '' : (gs === '' ? 0 : parseInt(gs))
+      };
+    }
   }
   // เตือนถ้า knockout เสมอแต่ไม่ได้เลือกทีมเข้ารอบ
-  if (isKnockoutMatch(matchId) && parseInt(h) === parseInt(a) && !winner) {
+  if (!clearing && isKnockoutMatch(matchId) && parseInt(h) === parseInt(a) && !winner) {
     if (!confirm('ผล 90 นาทีเสมอ แต่ยังไม่ได้เลือกทีมเข้ารอบ\nทีมถัดไปจะยังไม่ถูกเติมชื่อ\n\nต้องการบันทึกต่อไหม?')) return;
   }
   try {
     const result = await apiPost({
       action: 'saveActual',
       matchId: matchId,
-      homeScore: parseInt(h),
-      awayScore: parseInt(a),
+      homeScore: clearing ? '' : parseInt(h),
+      awayScore: clearing ? '' : parseInt(a),
       winner: winner,
       etHome: etH === '' ? '' : parseInt(etH),
       etAway: etA === '' ? '' : parseInt(etA),
@@ -1624,7 +1633,7 @@ async function saveActual(matchId) {
       return;
     }
     actuals[matchId] = {
-      h: String(h), a: String(a), winner: winner,
+      h: clearing ? '' : String(h), a: clearing ? '' : String(a), winner: winner,
       etH: etH === '' ? '' : String(etH), etA: etA === '' ? '' : String(etA),
       penH: penH === '' ? '' : String(penH), penA: penA === '' ? '' : String(penA),
       ...(extra ? {
@@ -1635,7 +1644,7 @@ async function saveActual(matchId) {
       } : {})
     };
     renderAllStages();
-    alert('บันทึกผลจริงแล้ว');
+    alert(clearing ? 'ล้างผลจริงแล้ว' : 'บันทึกผลจริงแล้ว');
   } catch (e) {
     alert('บันทึกไม่สำเร็จ กรุณาลองใหม่');
   }
