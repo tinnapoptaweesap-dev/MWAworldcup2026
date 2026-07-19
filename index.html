@@ -718,7 +718,7 @@
 <div id="loadingMsg" style="text-align:center; padding:30px; color:var(--text-dim); font-size:13px;">กำลังโหลดข้อมูล...</div>
 
 <div style="text-align:center; padding:20px; color:var(--text-dim); font-size:11px;">
-  เวอร์ชัน 3.5 ·
+  เวอร์ชัน 3.6 ·
   <a href="javascript:location.reload(true)" style="color:var(--gold); text-decoration:underline;">โหลดข้อมูลใหม่</a>
 </div>
 <script>
@@ -1819,7 +1819,7 @@ function calcBadge(ph, pa, ah, aa, matchId, predObj, actObj) {
 // ── ตารางทายนาที (นัดชิงที่ 3 / ชิงชนะเลิศ) ──────────────────────
 function renderMinuteScoreboard(period) {
   const tbody = document.getElementById('scoreboardBody');
-  const thead = document.querySelector('.scoreboard-table thead tr');
+  const thead = document.getElementById('scoreboardBody')?.closest('table')?.querySelector('thead tr');
   const matchId = period === 'third' ? '3rd' : 'final';
   const match = getMatchById(matchId);
   const act = actuals[matchId];
@@ -1937,7 +1937,7 @@ function renderMinuteScoreboard(period) {
 // ── ตารางทายแชมป์ / ดาวซัลโว ──────────────────────────────────────
 function renderSpecialScoreboard(specialId) {
   const tbody = document.getElementById('scoreboardBody');
-  const thead = document.querySelector('.scoreboard-table thead tr');
+  const thead = document.getElementById('scoreboardBody')?.closest('table')?.querySelector('thead tr');
   const label = specialId === 'champion' ? '👑 ทายแชมป์' : '⚽ ทายดาวซัลโว';
   const icon = specialId === 'champion' ? '👑' : '⚽';
 
@@ -2067,8 +2067,8 @@ async function renderScoreboard() {
     locks = await apiGet('getLocks') || {};
   } catch (e) {
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ff6b6b;padding:24px;">
-      โหลดข้อมูลไม่สำเร็จ: ${escapeHtml(e.message || 'unknown error')}<br>
-      <span style="font-size:12px;color:var(--text-dim);">ลองกด "โหลดข้อมูลใหม่" ด้านล่างหน้า หรือเช็คว่า Apps Script เป็นเวอร์ชันล่าสุด</span>
+      โหลดข้อมูลไม่สำเร็จ [v3.6]: ${escapeHtml(e.message || 'unknown error')}<br>
+      <span style="font-size:12px;color:var(--text-dim);">ถ้าเห็น [v3.6] แต่ error ยังพูดถึง lockRows แปลว่าเบราว์เซอร์ยังใช้ไฟล์เก่า — ลองเปิดแบบไม่ระบุตัวตน</span>
     </td></tr>`;
     return;
   }
@@ -2088,7 +2088,7 @@ async function renderScoreboard() {
   }
 
   // คืนหัวตารางปกติ (เผื่อเพิ่งสลับมาจากนัดทายนาที)
-  const thead = document.querySelector('.scoreboard-table thead tr');
+  const thead = document.getElementById('scoreboardBody')?.closest('table')?.querySelector('thead tr');
   if (thead) {
     thead.innerHTML = `
       <th>#</th>
