@@ -697,6 +697,8 @@
       <option value="knockout">รอบ 16/8/4 ทีม (14 นัด)</option>
       <option value="third">ชิงอันดับ 3</option>
       <option value="final">ชิงชนะเลิศ</option>
+      <option value="champion">👑 ทายแชมป์</option>
+      <option value="topscorer">⚽ ทายดาวซัลโว</option>
     </select>
   </div>
   <table class="scoreboard-table">
@@ -716,7 +718,7 @@
 <div id="loadingMsg" style="text-align:center; padding:30px; color:var(--text-dim); font-size:13px;">กำลังโหลดข้อมูล...</div>
 
 <div style="text-align:center; padding:20px; color:var(--text-dim); font-size:11px;">
-  เวอร์ชัน 3.2 ·
+  เวอร์ชัน 3.3 ·
   <a href="javascript:location.reload(true)" style="color:var(--gold); text-decoration:underline;">โหลดข้อมูลใหม่</a>
 </div>
 <script>
@@ -1932,6 +1934,81 @@ function renderMinuteScoreboard(period) {
   tbody.innerHTML = headerRow + rows;
 }
 
+// ── ตารางทายแชมป์ / ดาวซัลโว ──────────────────────────────────────
+function renderSpecialScoreboard(specialId) {
+  const tbody = document.getElementById('scoreboardBody');
+  const thead = document.querySelector('.scoreboard-table thead tr');
+  const label = specialId === 'champion' ? '👑 ทายแชมป์' : '⚽ ทายดาวซัลโว';
+  const icon = specialId === 'champion' ? '👑' : '⚽';
+
+  if (thead) {
+    thead.innerHTML = `
+      <th>#</th>
+      <th>ผู้ทาย</th>
+      <th>${label}</th>
+      <th>ผล</th>`;
+  }
+
+  // รวมคำทายทุกคน
+  const list = [];
+  players.forEach(p => {
+    const val = specials[specialId + '|' + p];
+    if (!val || String(val).trim() === '') return;
+    list.push({ name: p, val: String(val).trim() });
+  });
+
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:24px;">
+      ยังไม่มีใครทาย${specialId === 'champion' ? 'แชมป์' : 'ดาวซัลโว'}</td></tr>`;
+    return;
+  }
+
+  const actual = (specialActuals[specialId] ?? '').trim();
+  const isLocked = !!locks[specialId];
+  const norm = s => s.toLowerCase().replace(/\s+/g, '');
+  const winners = actual ? list.filter(x => norm(x.val) === norm(actual)).map(x => x.name) : [];
+
+  // เรียง: คนทายถูกขึ้นก่อน แล้วตามชื่อ
+  list.sort((a, b) => {
+    const wa = winners.includes(a.name) ? 0 : 1;
+    const wb = winners.includes(b.name) ? 0 : 1;
+    if (wa !== wb) return wa - wb;
+    return a.name.localeCompare(b.name, 'th');
+  });
+
+  let headerRow = '';
+  if (actual) {
+    headerRow = `<tr style="background:rgba(255,209,102,.1);">
+      <td colspan="4" style="text-align:center;padding:12px;color:#FFD166;font-weight:600;">
+        ${icon} ผลจริง: ${escapeHtml(actual)}
+        ${winners.length > 0 ? ` · ทายถูก ${winners.length} คน` : ' · ยังไม่มีใครทายถูก'}
+      </td></tr>`;
+  } else {
+    headerRow = `<tr style="background:rgba(255,255,255,.03);">
+      <td colspan="4" style="text-align:center;padding:12px;color:var(--text-dim);">
+        ⏳ ยังไม่ประกาศผล — แสดงคำทายของทุกคน
+      </td></tr>`;
+  }
+
+  const rows = list.map((x, i) => {
+    const isMe = x.name === currentUser ? ' style="background:var(--highlight);"' : '';
+    const isWin = winners.includes(x.name);
+    const rank = isWin ? '🏆' : (i + 1);
+    const resultTxt = !actual ? '–'
+      : (isWin ? '<span style="color:#FFD166;font-weight:700;">ถูก 🎉</span>'
+               : '<span style="color:var(--text-dim);">ผิด</span>');
+    const rowStyle = isWin ? ' style="background:rgba(255,209,102,.12);"' : isMe;
+    return `<tr${rowStyle}>
+      <td><span class="rank-num ${isWin?'r1':''}">${rank}</span></td>
+      <td style="font-weight:600">${escapeHtml(x.name)}</td>
+      <td style="color:#7CFC8C;font-weight:600;">${escapeHtml(x.val)}</td>
+      <td>${resultTxt}</td>
+    </tr>`;
+  }).join('');
+
+  tbody.innerHTML = headerRow + rows;
+}
+
 async function renderScoreboard() {
   const tbody = document.getElementById('scoreboardBody');
   tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:24px;">กำลังโหลด...</td></tr>`;
@@ -1953,12 +2030,30 @@ async function renderScoreboard() {
     (actualRows || []).forEach(r => {
       actuals[r.matchId] = { h: String(r.homeScore), a: String(r.awayScore), winner: r.winner || '', etH: (r.etHome ?? '') === '' ? '' : String(r.etHome), etA: (r.etAway ?? '') === '' ? '' : String(r.etAway), penH: (r.penHome ?? '') === '' ? '' : String(r.penHome), penA: (r.penAway ?? '') === '' ? '' : String(r.penAway), st1: (r.st1 ?? '')==='' ? '' : String(r.st1), st2: (r.st2 ?? '')==='' ? '' : String(r.st2), hasET: !!r.hasET, st3: (r.st3 ?? '')==='' ? '' : String(r.st3), st4: (r.st4 ?? '')==='' ? '' : String(r.st4), goalMin: (r.goalMinute ?? '')==='' ? '' : String(r.goalMinute), goalStop: (r.goalStoppage ?? '')==='' ? '' : String(r.goalStoppage) };
     });
+
+    const specialRows = await apiGet('getSpecials');
+    specials = {};
+    (specialRows || []).forEach(r => {
+      specials[r.specialId + '|' + r.name] = r.value;
+      if (!players.includes(r.name)) players.push(r.name);
+    });
+    specialActuals = await apiGet('getSpecialActuals') || {};
+
+    const lockRows = await apiGet('getLocks');
+    locks = {};
+    (lockRows || []).forEach(r => { locks[r.matchId] = true; });
   } catch (e) {
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ff6b6b;padding:24px;">โหลดข้อมูลไม่สำเร็จ ลองใหม่อีกครั้ง</td></tr>`;
     return;
   }
 
   const selectedPeriod = document.getElementById('scoreboardPeriod')?.value || 'all';
+
+  // ทายแชมป์ / ทายดาวซัลโว ใช้ตารางแสดงคำทาย ไม่ใช่คะแนน
+  if (selectedPeriod === 'champion' || selectedPeriod === 'topscorer') {
+    renderSpecialScoreboard(selectedPeriod);
+    return;
+  }
 
   // นัดชิงที่ 3 / ชิงชนะเลิศ ใช้ระบบทายนาที ไม่ใช่คะแนน
   if (selectedPeriod === 'third' || selectedPeriod === 'final') {
