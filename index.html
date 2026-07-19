@@ -718,7 +718,7 @@
 <div id="loadingMsg" style="text-align:center; padding:30px; color:var(--text-dim); font-size:13px;">กำลังโหลดข้อมูล...</div>
 
 <div style="text-align:center; padding:20px; color:var(--text-dim); font-size:11px;">
-  เวอร์ชัน 3.6 ·
+  เวอร์ชัน 3.7 ·
   <a href="javascript:location.reload(true)" style="color:var(--gold); text-decoration:underline;">โหลดข้อมูลใหม่</a>
 </div>
 <script>
@@ -1935,6 +1935,27 @@ function renderMinuteScoreboard(period) {
 }
 
 // ── ตารางทายแชมป์ / ดาวซัลโว ──────────────────────────────────────
+// รวมชื่อไทยที่ออกเสียงเหมือนกัน (เอ็มบั๊ปเป้=เอ็มปัปเป้) — ปลอดภัย ไม่รวมข้ามภาษา
+function normPlayerName(s) {
+  if (!s) return '';
+  let t = String(s).trim().toLowerCase().replace(/\s+/g, '');
+  t = t.replace(/[\u0e48\u0e49\u0e4a\u0e4b\u0e47\u0e4c]/g, '');       // วรรณยุกต์ ไม้ไต่คู้ การันต์
+  t = t.replace(/[\u0e30\u0e31]/g, '');                              // ะ ั
+  t = t.replace(/[\u0e38\u0e39]/g, '\u0e38');                        // ุ ู รวม
+  t = t.replace(/[\u0e34\u0e35\u0e36\u0e37]/g, '\u0e34');            // ิ ี ึ ื รวม
+  t = t.replace(/[ปพภ]/g, 'บ');
+  t = t.replace(/[ฟ]/g, 'ฝ');
+  t = t.replace(/[ทธถ]/g, 'ต');
+  t = t.replace(/[คฆขฃ]/g, 'ก');
+  t = t.replace(/[ซศษส]/g, 'ส');
+  t = t.replace(/[ญย]/g, 'ย');
+  t = t.replace(/[ฬล]/g, 'ล');
+  t = t.replace(/[ณน]/g, 'น');
+  t = t.replace(/[รฤ]/g, 'ร');
+  t = t.replace(/(.)\1+/g, '$1');                                    // ยุบตัวซ้ำ
+  return t;
+}
+
 function renderSpecialScoreboard(specialId) {
   const tbody = document.getElementById('scoreboardBody');
   const thead = document.getElementById('scoreboardBody')?.closest('table')?.querySelector('thead tr');
@@ -1970,15 +1991,14 @@ function renderSpecialScoreboard(specialId) {
 
   const actual = (specialActuals[specialId] ?? '').trim();
   const isLocked = !!locks[specialId];
-  const norm = s => s.toLowerCase().replace(/\s+/g, '');
-  const winners = actual ? list.filter(x => norm(x.val) === norm(actual)).map(x => x.name) : [];
+  const winners = actual ? list.filter(x => normPlayerName(x.val) === normPlayerName(actual)).map(x => x.name) : [];
 
-  // จำนวนประตูของนักเตะแต่ละคน (เก็บใน specialActuals ด้วย key พิเศษ "goals:ชื่อนักเตะ")
+  // จำนวนประตูของนักเตะแต่ละคน (เก็บด้วย key "goals:ชื่อ") — ใช้ normalized เพื่อรวมชื่อพิมพ์ต่าง
   const playerGoals = {};
   if (specialId === 'topscorer') {
     Object.keys(specialActuals).forEach(k => {
       if (k.indexOf('goals:') === 0) {
-        playerGoals[k.substring(6)] = specialActuals[k];
+        playerGoals[normPlayerName(k.substring(6))] = specialActuals[k];
       }
     });
   }
@@ -2020,7 +2040,7 @@ function renderSpecialScoreboard(specialId) {
     const nameColor = isWrong ? 'color:#8a938e;' : '';
     const valColor = isWrong ? 'color:#7a8580;' : 'color:#7CFC8C;';
     const goalCell = specialId === 'topscorer'
-      ? `<td style="color:var(--text-dim);">${playerGoals[x.val] != null ? playerGoals[x.val] + ' ประตู' : '–'}</td>`
+      ? `<td style="color:var(--text-dim);">${playerGoals[normPlayerName(x.val)] != null ? playerGoals[normPlayerName(x.val)] + ' ประตู' : '–'}</td>`
       : '';
     return `<tr${rowStyle}>
       <td><span class="rank-num ${isWin?'r1':''}">${rank}</span></td>
@@ -2067,8 +2087,8 @@ async function renderScoreboard() {
     locks = await apiGet('getLocks') || {};
   } catch (e) {
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ff6b6b;padding:24px;">
-      โหลดข้อมูลไม่สำเร็จ [v3.6]: ${escapeHtml(e.message || 'unknown error')}<br>
-      <span style="font-size:12px;color:var(--text-dim);">ถ้าเห็น [v3.6] แต่ error ยังพูดถึง lockRows แปลว่าเบราว์เซอร์ยังใช้ไฟล์เก่า — ลองเปิดแบบไม่ระบุตัวตน</span>
+      โหลดข้อมูลไม่สำเร็จ [v3.7]: ${escapeHtml(e.message || 'unknown error')}<br>
+      <span style="font-size:12px;color:var(--text-dim);">ถ้าเห็น [v3.7] แต่ error ยังพูดถึง lockRows แปลว่าเบราว์เซอร์ยังใช้ไฟล์เก่า — ลองเปิดแบบไม่ระบุตัวตน</span>
     </td></tr>`;
     return;
   }
@@ -2189,13 +2209,25 @@ function renderSpecialPanel() {
   const scorerActual = specialActuals['topscorer'] ?? '';
 
   if (isAdmin) {
-    // รวมรายชื่อนักเตะที่ถูกทาย (unique) เพื่อให้ admin กรอกจำนวนประตู
-    const scorerNames = [...new Set(
-      players.map(p => (specials['topscorer|' + p] ?? '').trim()).filter(v => v)
-    )].sort((a,b) => a.localeCompare(b, 'th'));
+    // รวมรายชื่อนักเตะที่ถูกทาย — ยุบชื่อออกเสียงเดียวกันเป็นชื่อเดียว (ใช้ตัวสะกดแรกที่เจอเป็นตัวแทน)
+    const seen = {};
+    players.forEach(p => {
+      const raw = (specials['topscorer|' + p] ?? '').trim();
+      if (!raw) return;
+      const key = normPlayerName(raw);
+      if (!seen[key]) seen[key] = raw;   // เก็บตัวสะกดแรกเป็นตัวแทน
+    });
+    const scorerNames = Object.values(seen).sort((a,b) => a.localeCompare(b, 'th'));
     const goalInputsHtml = scorerNames.map(name => {
       const key = 'goals:' + name;
-      const val = specialActuals[key] ?? '';
+      // อ่านค่าจาก key ที่ normalize ตรงกัน (เผื่อเคยบันทึกด้วยตัวสะกดอื่น)
+      let val = specialActuals[key] ?? '';
+      if (val === '') {
+        const nk = normPlayerName(name);
+        Object.keys(specialActuals).forEach(k => {
+          if (k.indexOf('goals:') === 0 && normPlayerName(k.substring(6)) === nk) val = specialActuals[k];
+        });
+      }
       const safeName = name.replace(/[^a-zA-Z0-9ก-๙]/g, '_');
       return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;">
         <span style="font-size:13px;min-width:130px;">${escapeHtml(name)}</span>
