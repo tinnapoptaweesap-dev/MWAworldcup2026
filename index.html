@@ -718,7 +718,7 @@
 <div id="loadingMsg" style="text-align:center; padding:30px; color:var(--text-dim); font-size:13px;">กำลังโหลดข้อมูล...</div>
 
 <div style="text-align:center; padding:20px; color:var(--text-dim); font-size:11px;">
-  เวอร์ชัน 3.3 ·
+  เวอร์ชัน 3.4 ·
   <a href="javascript:location.reload(true)" style="color:var(--gold); text-decoration:underline;">โหลดข้อมูลใหม่</a>
 </div>
 <script>
@@ -1942,7 +1942,12 @@ function renderSpecialScoreboard(specialId) {
   const icon = specialId === 'champion' ? '👑' : '⚽';
 
   if (thead) {
-    thead.innerHTML = `
+    thead.innerHTML = specialId === 'topscorer' ? `
+      <th>#</th>
+      <th>ผู้ทาย</th>
+      <th>${label}</th>
+      <th>ยิงจริง</th>
+      <th>ผล</th>` : `
       <th>#</th>
       <th>ผู้ทาย</th>
       <th>${label}</th>
@@ -1968,6 +1973,16 @@ function renderSpecialScoreboard(specialId) {
   const norm = s => s.toLowerCase().replace(/\s+/g, '');
   const winners = actual ? list.filter(x => norm(x.val) === norm(actual)).map(x => x.name) : [];
 
+  // จำนวนประตูของนักเตะแต่ละคน (เก็บใน specialActuals ด้วย key พิเศษ "goals:ชื่อนักเตะ")
+  const playerGoals = {};
+  if (specialId === 'topscorer') {
+    Object.keys(specialActuals).forEach(k => {
+      if (k.indexOf('goals:') === 0) {
+        playerGoals[k.substring(6)] = specialActuals[k];
+      }
+    });
+  }
+
   // เรียง: คนทายถูกขึ้นก่อน แล้วตามชื่อ
   list.sort((a, b) => {
     const wa = winners.includes(a.name) ? 0 : 1;
@@ -1976,16 +1991,17 @@ function renderSpecialScoreboard(specialId) {
     return a.name.localeCompare(b.name, 'th');
   });
 
+  const colspan = specialId === 'topscorer' ? 5 : 4;
   let headerRow = '';
   if (actual) {
     headerRow = `<tr style="background:rgba(255,209,102,.1);">
-      <td colspan="4" style="text-align:center;padding:12px;color:#FFD166;font-weight:600;">
+      <td colspan="${colspan}" style="text-align:center;padding:12px;color:#FFD166;font-weight:600;">
         ${icon} ผลจริง: ${escapeHtml(actual)}
         ${winners.length > 0 ? ` · ทายถูก ${winners.length} คน` : ' · ยังไม่มีใครทายถูก'}
       </td></tr>`;
   } else {
     headerRow = `<tr style="background:rgba(255,255,255,.03);">
-      <td colspan="4" style="text-align:center;padding:12px;color:var(--text-dim);">
+      <td colspan="${colspan}" style="text-align:center;padding:12px;color:var(--text-dim);">
         ⏳ ยังไม่ประกาศผล — แสดงคำทายของทุกคน
       </td></tr>`;
   }
@@ -1993,15 +2009,24 @@ function renderSpecialScoreboard(specialId) {
   const rows = list.map((x, i) => {
     const isMe = x.name === currentUser ? ' style="background:var(--highlight);"' : '';
     const isWin = winners.includes(x.name);
+    const isWrong = !!actual && !isWin;
     const rank = isWin ? '🏆' : (i + 1);
     const resultTxt = !actual ? '–'
       : (isWin ? '<span style="color:#FFD166;font-weight:700;">ถูก 🎉</span>'
-               : '<span style="color:var(--text-dim);">ผิด</span>');
-    const rowStyle = isWin ? ' style="background:rgba(255,209,102,.12);"' : isMe;
+               : '<span style="color:#5c6b60;">✗ ผิด</span>');
+    let rowStyle = isMe;
+    if (isWin) rowStyle = ' style="background:rgba(255,209,102,.12);"';
+    else if (isWrong) rowStyle = ' style="opacity:.45;"';
+    const nameColor = isWrong ? 'color:#8a938e;' : '';
+    const valColor = isWrong ? 'color:#7a8580;' : 'color:#7CFC8C;';
+    const goalCell = specialId === 'topscorer'
+      ? `<td style="color:var(--text-dim);">${playerGoals[x.val] != null ? playerGoals[x.val] + ' ประตู' : '–'}</td>`
+      : '';
     return `<tr${rowStyle}>
       <td><span class="rank-num ${isWin?'r1':''}">${rank}</span></td>
-      <td style="font-weight:600">${escapeHtml(x.name)}</td>
-      <td style="color:#7CFC8C;font-weight:600;">${escapeHtml(x.val)}</td>
+      <td style="font-weight:600;${nameColor}">${escapeHtml(x.name)}</td>
+      <td style="font-weight:600;${valColor}">${escapeHtml(x.val)}</td>
+      ${goalCell}
       <td>${resultTxt}</td>
     </tr>`;
   }).join('');
@@ -2043,7 +2068,10 @@ async function renderScoreboard() {
     locks = {};
     (lockRows || []).forEach(r => { locks[r.matchId] = true; });
   } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ff6b6b;padding:24px;">โหลดข้อมูลไม่สำเร็จ ลองใหม่อีกครั้ง</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ff6b6b;padding:24px;">
+      โหลดข้อมูลไม่สำเร็จ: ${escapeHtml(e.message || 'unknown error')}<br>
+      <span style="font-size:12px;color:var(--text-dim);">ลองกด "โหลดข้อมูลใหม่" ด้านล่างหน้า หรือเช็คว่า Apps Script เป็นเวอร์ชันล่าสุด</span>
+    </td></tr>`;
     return;
   }
 
@@ -2163,6 +2191,23 @@ function renderSpecialPanel() {
   const scorerActual = specialActuals['topscorer'] ?? '';
 
   if (isAdmin) {
+    // รวมรายชื่อนักเตะที่ถูกทาย (unique) เพื่อให้ admin กรอกจำนวนประตู
+    const scorerNames = [...new Set(
+      players.map(p => (specials['topscorer|' + p] ?? '').trim()).filter(v => v)
+    )].sort((a,b) => a.localeCompare(b, 'th'));
+    const goalInputsHtml = scorerNames.map(name => {
+      const key = 'goals:' + name;
+      const val = specialActuals[key] ?? '';
+      const safeName = name.replace(/[^a-zA-Z0-9ก-๙]/g, '_');
+      return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;">
+        <span style="font-size:13px;min-width:130px;">${escapeHtml(name)}</span>
+        <input type="number" min="0" id="goalInput_${safeName}" value="${escapeHtml(String(val))}"
+          style="width:60px;text-align:center;background:#0D2B1A;border:1px solid var(--green);border-radius:5px;color:#7CFC8C;padding:5px;" />
+        <span style="font-size:12px;color:var(--text-dim);">ประตู</span>
+        <button class="calc-btn" style="padding:4px 10px;font-size:12px;" onclick="saveGoalCount(${JSON.stringify(name)}, 'goalInput_${safeName}')">บันทึก</button>
+      </div>`;
+    }).join('');
+
     actualArea.innerHTML = `
       <div class="section-title" style="font-size:14px;">ผลจริง (admin)</div>
       <div class="player-setup" style="align-items:flex-end; flex-wrap:wrap; gap:16px;">
@@ -2173,12 +2218,18 @@ function renderSpecialPanel() {
           <button class="calc-btn" style="background:${champLocked ? '#666' : '#b33'};margin-left:6px;margin-top:6px;" onclick="toggleSpecialLock('champion')">${champLocked ? '🔓 ปลดล็อก' : '🔒 ล็อก'}</button>
         </div>
         <div style="min-width:220px;">
-          <label>ดาวซัลโวจริง</label>
+          <label>ดาวซัลโวจริง (ถ้าทราบแล้ว)</label>
           <input type="text" id="scorerActualInput" value="${escapeHtml(scorerActual)}" placeholder="กรอกชื่อนักเตะ" />
           <button class="calc-btn" onclick="saveSpecialActual('topscorer')" style="margin-top:6px;">บันทึก</button>
           <button class="calc-btn" style="background:${scorerLocked ? '#666' : '#b33'};margin-left:6px;margin-top:6px;" onclick="toggleSpecialLock('topscorer')">${scorerLocked ? '🔓 ปลดล็อก' : '🔒 ล็อก'}</button>
         </div>
       </div>
+      ${scorerNames.length > 0 ? `
+      <div style="margin-top:16px;padding:12px;background:rgba(255,209,102,.06);border:1px dashed rgba(255,209,102,.3);border-radius:8px;">
+        <div style="font-size:12px;color:#FFD166;font-weight:600;margin-bottom:8px;">⚽ จำนวนประตูของนักเตะที่ถูกทาย (อัปเดตได้เรื่อยๆ ระหว่างทัวร์นาเมนต์)</div>
+        ${goalInputsHtml}
+        <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">รายชื่อนี้ดึงมาจากคำทายของสมาชิกอัตโนมัติ · กรอกจำนวนประตูล่าสุดแล้วกดบันทึกทีละคน</div>
+      </div>` : ''}
     `;
   } else {
     let html = '';
@@ -2228,6 +2279,26 @@ async function saveSpecial(specialId, val) {
     }
   } catch (e) {
     if (statusEl) { statusEl.textContent = '✗ บันทึกไม่สำเร็จ'; statusEl.style.color = '#ff6b6b'; }
+  }
+}
+
+async function saveGoalCount(playerName, inputId) {
+  const val = document.getElementById(inputId)?.value ?? '';
+  try {
+    const result = await apiPost({
+      action: 'saveSpecialActual',
+      specialId: 'goals:' + playerName,
+      value: val,
+      password: window._adminPw || ''
+    });
+    if (result.error) {
+      alert('รหัสผ่านไม่ถูกต้อง');
+      return;
+    }
+    specialActuals['goals:' + playerName] = val;
+    alert(`บันทึก ${playerName}: ${val} ประตู แล้ว`);
+  } catch (e) {
+    alert('บันทึกไม่สำเร็จ');
   }
 }
 
