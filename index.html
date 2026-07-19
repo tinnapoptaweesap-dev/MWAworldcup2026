@@ -716,7 +716,7 @@
 <div id="loadingMsg" style="text-align:center; padding:30px; color:var(--text-dim); font-size:13px;">กำลังโหลดข้อมูล...</div>
 
 <div style="text-align:center; padding:20px; color:var(--text-dim); font-size:11px;">
-  เวอร์ชัน 3.1 ·
+  เวอร์ชัน 3.2 ·
   <a href="javascript:location.reload(true)" style="color:var(--gold); text-decoration:underline;">โหลดข้อมูลใหม่</a>
 </div>
 <script>
@@ -1814,6 +1814,124 @@ function calcBadge(ph, pa, ah, aa, matchId, predObj, actObj) {
 }
 
 // ── SCOREBOARD ────────────────────────────────────────────────────────────
+// ── ตารางทายนาที (นัดชิงที่ 3 / ชิงชนะเลิศ) ──────────────────────
+function renderMinuteScoreboard(period) {
+  const tbody = document.getElementById('scoreboardBody');
+  const thead = document.querySelector('.scoreboard-table thead tr');
+  const matchId = period === 'third' ? '3rd' : 'final';
+  const match = getMatchById(matchId);
+  const act = actuals[matchId];
+
+  // ปรับหัวตาราง
+  if (thead) {
+    thead.innerHTML = `
+      <th>#</th>
+      <th>ผู้ทาย</th>
+      <th>ทายนาที</th>
+      <th>ห่าง</th>
+      <th>ผล</th>`;
+  }
+
+  // แปลงนาที+ทดเป็นข้อความ
+  const fmtMS = (m, s) => (s && Number(s) > 0) ? `${m}+${s}` : `${m}`;
+
+  // รวมคำทายทุกคน
+  const list = [];
+  players.forEach(p => {
+    const pr = preds[matchId + '|' + p];
+    if (!pr || pr.gMin === '' || pr.gMin == null) return;
+    list.push({ name: p, m: Number(pr.gMin), s: Number(pr.gStop) || 0 });
+  });
+
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:24px;">
+      ยังไม่มีใครทายนัดนี้</td></tr>`;
+    return;
+  }
+
+  // มีผลจริงหรือยัง
+  const goalMin = (act && act.goalMin !== '' && act.goalMin != null) ? Number(act.goalMin) : null;
+  const hasResult = !!(act && act.h !== '' && act.a !== '');
+  const is00 = hasResult && goalMin === null;
+
+  let diffs = {};
+  let winners = [];
+  if (goalMin !== null) {
+    const winnerList = computeMinuteWinnersClient(period, { rank1: 0 });
+    winners = winnerList.map(w => w.name);
+    // คำนวณ diff ของทุกคนเพื่อแสดง
+    const st1 = Number(act.st1)||0, st2 = Number(act.st2)||0;
+    const hasET = !!act.hasET, st3 = Number(act.st3)||0, st4 = Number(act.st4)||0;
+    let ext90 = 0, extMin = 0;
+    list.forEach(x => {
+      if (x.m === 90) ext90 = Math.max(ext90, x.s);
+      if (x.m > 90) extMin = Math.max(extMin, x.m);
+    });
+    const tl = buildTimelineClient(st1, st2, hasET, st3, st4, ext90, extMin);
+    const goalStop = Number(act.goalStop) || 0;
+    const ai = tl.indexOf(goalMin + '|' + goalStop);
+    list.forEach(x => {
+      const pi = resolveMinuteIndexClient(x.m, x.s, tl, st1, st2, hasET);
+      diffs[x.name] = (pi == null || ai < 0) ? null : Math.abs(pi - ai);
+    });
+  }
+
+  // เรียง: ถ้ามีผล เรียงตามใกล้สุด, ถ้ายัง เรียงตามนาทีที่ทาย
+  list.sort((a, b) => {
+    if (goalMin !== null) {
+      const da = diffs[a.name], db = diffs[b.name];
+      if (da == null) return 1;
+      if (db == null) return -1;
+      return da - db;
+    }
+    const va = a.m + a.s/100, vb = b.m + b.s/100;
+    return va - vb;
+  });
+
+  // แถวหัว: แสดงผลจริง
+  let headerRow = '';
+  if (goalMin !== null) {
+    const gs = Number(act.goalStop) || 0;
+    headerRow = `<tr style="background:rgba(255,209,102,.1);">
+      <td colspan="5" style="text-align:center;padding:12px;color:#FFD166;font-weight:600;">
+        🎯 ประตูรองสุดท้ายจริง: นาที ${fmtMS(goalMin, gs)}
+        ${act.hasET ? ' · มีต่อเวลา' : ''}
+      </td></tr>`;
+  } else if (is00) {
+    headerRow = `<tr style="background:rgba(255,107,107,.1);">
+      <td colspan="5" style="text-align:center;padding:12px;color:#ff6b6b;font-weight:600;">
+        🚫 เกมจบ 0-0 · ไม่มีผู้ได้รางวัล
+      </td></tr>`;
+  } else {
+    headerRow = `<tr style="background:rgba(255,255,255,.03);">
+      <td colspan="5" style="text-align:center;padding:12px;color:var(--text-dim);">
+        ⏳ ยังไม่ประกาศผล — แสดงคำทายของทุกคน
+      </td></tr>`;
+  }
+
+  const rows = list.map((x, i) => {
+    const isMe = x.name === currentUser ? ' style="background:var(--highlight);"' : '';
+    const isWin = winners.includes(x.name);
+    const rank = (goalMin !== null && isWin) ? '🏆' : (i + 1);
+    const d = diffs[x.name];
+    const diffTxt = (goalMin === null) ? '–'
+      : (d == null ? '–' : `${d} ขั้น`);
+    const resultTxt = (goalMin === null) ? '–'
+      : (isWin ? '<span style="color:#FFD166;font-weight:700;">ชนะ 🎉</span>'
+               : '<span style="color:var(--text-dim);">–</span>');
+    const winStyle = isWin ? ' style="background:rgba(255,209,102,.12);"' : isMe;
+    return `<tr${winStyle}>
+      <td><span class="rank-num ${isWin?'r1':''}">${rank}</span></td>
+      <td style="font-weight:600">${escapeHtml(x.name)}</td>
+      <td><span style="font-family:'Bebas Neue';font-size:18px;color:#7CFC8C;">${fmtMS(x.m, x.s)}</span></td>
+      <td style="color:var(--text-dim);">${diffTxt}</td>
+      <td>${resultTxt}</td>
+    </tr>`;
+  }).join('');
+
+  tbody.innerHTML = headerRow + rows;
+}
+
 async function renderScoreboard() {
   const tbody = document.getElementById('scoreboardBody');
   tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:24px;">กำลังโหลด...</td></tr>`;
@@ -1841,6 +1959,24 @@ async function renderScoreboard() {
   }
 
   const selectedPeriod = document.getElementById('scoreboardPeriod')?.value || 'all';
+
+  // นัดชิงที่ 3 / ชิงชนะเลิศ ใช้ระบบทายนาที ไม่ใช่คะแนน
+  if (selectedPeriod === 'third' || selectedPeriod === 'final') {
+    renderMinuteScoreboard(selectedPeriod);
+    return;
+  }
+
+  // คืนหัวตารางปกติ (เผื่อเพิ่งสลับมาจากนัดทายนาที)
+  const thead = document.querySelector('.scoreboard-table thead tr');
+  if (thead) {
+    thead.innerHTML = `
+      <th>#</th>
+      <th>ผู้ทาย</th>
+      <th>คะแนน</th>
+      <th>≥3 แต้ม</th>
+      <th>≥1 แต้ม</th>`;
+  }
+
   let matchFilter = null; // null = all matches
   if (selectedPeriod !== 'all') {
     matchFilter = new Set(PERIOD_MATCHES[selectedPeriod] || []);
@@ -1852,6 +1988,8 @@ async function renderScoreboard() {
 
   allMatches.forEach(m => {
     if (matchFilter && !matchFilter.has(m.id)) return;
+    // ข้ามนัดทายนาที (ไม่มีคะแนน) เมื่อดู "รวมทั้งหมด"
+    if (isMinuteGuessMatch(m.id)) return;
     const ah = actuals[m.id]?.h ?? '';
     const aa = actuals[m.id]?.a ?? '';
     if (ah==='' || aa==='') return;
