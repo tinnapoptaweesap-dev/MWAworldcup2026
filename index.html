@@ -718,7 +718,7 @@
 <div id="loadingMsg" style="text-align:center; padding:30px; color:var(--text-dim); font-size:13px;">กำลังโหลดข้อมูล...</div>
 
 <div style="text-align:center; padding:20px; color:var(--text-dim); font-size:11px;">
-  เวอร์ชัน 3.4 ·
+  เวอร์ชัน 3.5 ·
   <a href="javascript:location.reload(true)" style="color:var(--gold); text-decoration:underline;">โหลดข้อมูลใหม่</a>
 </div>
 <script>
@@ -2064,9 +2064,7 @@ async function renderScoreboard() {
     });
     specialActuals = await apiGet('getSpecialActuals') || {};
 
-    const lockRows = await apiGet('getLocks');
-    locks = {};
-    (lockRows || []).forEach(r => { locks[r.matchId] = true; });
+    locks = await apiGet('getLocks') || {};
   } catch (e) {
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ff6b6b;padding:24px;">
       โหลดข้อมูลไม่สำเร็จ: ${escapeHtml(e.message || 'unknown error')}<br>
